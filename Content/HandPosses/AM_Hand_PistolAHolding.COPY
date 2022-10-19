@@ -1,0 +1,15 @@
+Begin Object Class=/Script/Engine.AnimMontage Name="AM_Hand_PistolAHolding"
+   Begin Object Class=/Script/Engine.AnimDataModel Name="AnimationDataModel"
+   End Object
+   Begin Object Class=/Script/UnrealEd.SceneThumbnailInfo Name="SceneThumbnailInfo_0"
+   End Object
+   Begin Object Name="AnimationDataModel"
+   End Object
+   Begin Object Name="SceneThumbnailInfo_0"
+   End Object
+   CompositeSections(0)=(SectionName="Default",LinkedMontage=AnimMontage'"AM_Hand_PistolAHolding"',SegmentBeginTime=-1.000000,SegmentLength=-1.000000)
+   AnimNotifyTracks(0)=(TrackName="1",TrackColor=(R=0.500000,G=0.500000,B=0.500000,A=1.000000))
+   DataModel=AnimDataModel'"AnimationDataModel"'
+   Skeleton=Skeleton'"/Game/VirtualReality/Mannequin/Character/Mesh/MannequinHand_Right_Skeleton.MannequinHand_Right_Skeleton"'
+   ThumbnailInfo=SceneThumbnailInfo'"SceneThumbnailInfo_0"'
+End Object
