@@ -16,6 +16,7 @@
 #include "Player/VRCharacterAB.h"
 #include "MotionControllerComponent.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
+#include "Components/SphereComponent.h"
 
 #define LEVEL_NETWORKTEST TEXT("/Game/Content/Levels/TestLevels/LVL_NetworkTest");
 #define GameMode_MP_Default TEXT("?listen?game=Default");
@@ -91,6 +92,13 @@ AVRCharacter::AVRCharacter()
 	_RightHandMCComp = CreateDefaultSubobject<UMotionControllerComponent>("RightHandMCComp");
 	_RightHandMCComp->SetupAttachment(_RightHandRoot);
 	_RightHandMCComp->MotionSource = "Right";
+
+	//ClimbingZone
+	_ClimbingZoneDetection = CreateDefaultSubobject<USphereComponent>("ClimbingDetectionZone");
+	_ClimbingZoneDetection->SetupAttachment(_CharacterCap);
+	_ClimbingZoneDetection->SetSphereRadius(75.f);
+	_ClimbingZoneDetection->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Overlap);
+	_ClimbingZoneDetection->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 }
 
 // Called when the game starts or when spawned
@@ -100,7 +108,7 @@ void AVRCharacter::BeginPlay()
 	
 	if (_VRPawnComp)
 	{
-		_VRPawnComp->SetCachedComponents(_CharacterCap, _CharacterCam, _CharacterRoot);
+		_VRPawnComp->SetCachedComponents(_CharacterCap, _CharacterCam, _CharacterRoot, _ClimbingZoneDetection);
 	}
 
 	if (IsLocallyControlled() && _HMDMesh)
@@ -501,6 +509,14 @@ void AVRCharacter::RescaleVRBody()
 	_VRBody->SetWorldScale3D(FVector(NewScale));
 }
 
+FTransform AVRCharacter::GetVRCameraTransorm()
+{
+	if (!_CharacterCam)
+		return FTransform();
+
+	return _CharacterCam->GetComponentTransform();
+}
+
 FVector AVRCharacter::GetCollisionLocation()
 {
 	if (!_CharacterCap)
@@ -509,9 +525,9 @@ FVector AVRCharacter::GetCollisionLocation()
 	return _CharacterCap->GetComponentLocation();
 }
 
-void AVRCharacter::HandGrabbedClimbingPoint(bool LeftHand, EClimbingMode AttemptedClimbingMode)
+void AVRCharacter::HandGrabbedClimbingPoint(bool LeftHand, FQuat ClimbingHandQuat, EClimbingMode AttemptedClimbingMode)
 {
-	_VRPawnComp->HandGrabbedClimbingPoint(LeftHand,  AttemptedClimbingMode);
+	_VRPawnComp->HandGrabbedClimbingPoint(LeftHand, ClimbingHandQuat, AttemptedClimbingMode);
 }
 
 FClimbingHandInfo AVRCharacter::GetLeftHandClimbInfo()

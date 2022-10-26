@@ -4,6 +4,7 @@
 #include "Weapons/Guns/FirearmActions/FirearmAction.h"
 #include "Utility/ExtraMaths.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Weapons/Guns/GunBase.h"
 
 // Sets default values for this component's properties
 UFirearmAction::UFirearmAction()
@@ -22,6 +23,10 @@ void UFirearmAction::BeginPlay()
 
 	// ...
 	
+	if (AGunBase* GB = Cast<AGunBase>(GetOwner()))
+	{
+		GB->AddFirearmActionComponent(this);
+	}
 }
 
 
@@ -31,6 +36,16 @@ void UFirearmAction::TickComponent(float DeltaTime, ELevelTick TickType, FActorC
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 	// ...
+}
+
+void UFirearmAction::HardReload()
+{
+
+}
+
+void UFirearmAction::SetWeaponGrabbed(bool bGrabbed)
+{
+	_bWeaponIsGrabbed = bGrabbed;
 }
 
 float UFirearmAction::GetPercentageOnLine(FVector StartPoint, FVector EndPoint, FVector Point, float UnsqauredLineLength)

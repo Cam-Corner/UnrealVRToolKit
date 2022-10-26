@@ -66,13 +66,13 @@ void ALeverSwitch::UpdateCachedVariables()
 
 
 	_StartOfAngleLoc = _CompRot.GetUpVector();
-	_StartOfAngleLoc = _StartOfAngleLoc.RotateAngleAxis(_MinAngle, _AxisOfArc);
+	_StartOfAngleLoc = _StartOfAngleLoc.RotateAngleAxis(_MinAngle + _ArchRotationOffsetFromUpVector, _AxisOfArc);
 	_StartOfAngleDir = _StartOfAngleLoc;
 	_StartOfAngleLoc *= _RadiusOfArc;
 	_StartOfAngleLoc += _CompLoc;
 
 	_EndOfAngleLoc = _CompRot.GetUpVector();
-	_EndOfAngleLoc = _EndOfAngleLoc.RotateAngleAxis(_MaxAngle, _AxisOfArc);
+	_EndOfAngleLoc = _EndOfAngleLoc.RotateAngleAxis(_MaxAngle + _ArchRotationOffsetFromUpVector, _AxisOfArc);
 	_EndOfAngleDir = _EndOfAngleLoc;
 	_EndOfAngleLoc *= _RadiusOfArc;
 	_EndOfAngleLoc += _CompLoc;
@@ -144,6 +144,31 @@ void ALeverSwitch::GotoAngle(float DeltaTime, float Angle)
 		NewQuat = FQuat::Slerp(_MovingSwitchPartMesh->GetComponentQuat(), DesiredRot, _HoldingSlerpSpeed * DeltaTime);
 	
 	_MovingSwitchPartMesh->SetWorldRotation(NewQuat);
+
+	if (_CurrentAngle >= (_MaxAngle - (_MaxAngle * 0.05f)) && !_bWhereOverAngle)
+	{
+		_bWhereOverAngle = true;
+		if (!_bIsToggleSwitch && !_bCurrentlyEnabled)
+		{
+			_bCurrentlyEnabled = true;
+		}
+		else
+		{
+			_bCurrentlyEnabled = !_bCurrentlyEnabled;
+		}
+
+		SwitchEnabled(_bCurrentlyEnabled);
+	}
+	else if(_CurrentAngle < (_MaxAngle - (_MaxAngle * 0.05f)) && _bWhereOverAngle)
+	{
+		_bWhereOverAngle = false;
+		if (!_bIsToggleSwitch)
+		{
+			_bCurrentlyEnabled = false;
+		}
+
+		SwitchEnabled(_bCurrentlyEnabled);
+	}
 }
 
 void ALeverSwitch::HoldingSwitch(float DeltaTime, FVector HandLocation, FQuat HandRotation)
@@ -163,7 +188,7 @@ void ALeverSwitch::HoldingSwitch(float DeltaTime, FVector HandLocation, FQuat Ha
 
 void ALeverSwitch::DefaultAction(float DeltaTime)
 {
-	float NewAngle = _CurrentAngle + (_AngleVel * DeltaTime);
+	/*float NewAngle = _CurrentAngle + (_AngleVel * DeltaTime);
 	float Friction = _AngleFriction * _SimulatedWeight * DeltaTime;
 	if (_AngleVel > 0)
 	{	
@@ -181,9 +206,9 @@ void ALeverSwitch::DefaultAction(float DeltaTime)
 	}
 
 	if (NewAngle < _MinAngle || NewAngle > _MaxAngle)
-		_AngleVel = 0;
+		_AngleVel = 0;*/
 
-	GotoAngle(DeltaTime, NewAngle);
+	GotoAngle(DeltaTime, _RestingAngle);
 }
 
 void ALeverSwitch::HitARigidBody(const FHitResult& Hit)

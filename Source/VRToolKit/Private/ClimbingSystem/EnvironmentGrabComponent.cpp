@@ -3,6 +3,7 @@
 
 #include "ClimbingSystem/EnvironmentGrabComponent.h"
 #include "Player/VRHand.h"
+#include "Utility/ExtraMaths.h"
 
 // Sets default values for this component's properties
 UEnvironmentGrabComponent::UEnvironmentGrabComponent()
@@ -15,6 +16,15 @@ UEnvironmentGrabComponent::UEnvironmentGrabComponent()
 	SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Overlap);
 
 	// ...
+}
+
+FVector UEnvironmentGrabComponent::GetLocationOnZone(FVector GotoLoc)
+{
+	float YBoxExtent = GetScaledBoxExtent().Y;
+	FVector LineStart = GetComponentLocation() + (-GetRightVector() * YBoxExtent);
+	FVector LineEnd = GetComponentLocation() + (GetRightVector() * YBoxExtent);
+
+	return ExtraMaths::PointProjectionOnLine(LineStart, LineEnd, GotoLoc, true);
 }
 
 

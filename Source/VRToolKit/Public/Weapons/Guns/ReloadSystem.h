@@ -42,6 +42,7 @@ public:
 
 	bool HasBulletsLeft();
 
+	void HardReload();
 private:
 	uint8 _BulletsLeft = 0;
 
@@ -64,11 +65,13 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MagazineSystem: Audio")
 		USoundCue* _MagEjectSound;
 
-	
-
 	UFUNCTION()
 	void ReloadSystemOverlapEvent(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 			UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	//temp value until mag system is improved
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MagazineSystem")
+	uint8 _StartingAmmoForHardReloading = 7;
 
 protected:
 	bool _bCanReload = true;

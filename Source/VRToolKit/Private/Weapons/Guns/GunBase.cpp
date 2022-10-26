@@ -6,6 +6,8 @@
 #include "Weapons/Guns/ReloadSystem.h"
 #include "ActorComponents/PhysicsHandlerComponent.h"
 #include "Player/VRHand.h"
+#include "Components/ActorComponent.h"
+#include "Weapons/Guns/FirearmActions/FirearmAction.h"
 
 AGunBase::AGunBase()
 {
@@ -18,6 +20,12 @@ void AGunBase::BeginPlay()
 	_MainGrabComponent->_ComponentTrigger.AddDynamic(this, &AGunBase::TriggerPressed);
 	_MainGrabComponent->_ComponentBottomButton.AddDynamic(this, &AGunBase::BottomButtonPressed);
 	_MainGrabComponent->_ComponentTopButton.AddDynamic(this, &AGunBase::TopButtonPressed);
+
+	if (_bStartReloaded)
+		HardReloadWeapon();
+
+	/*TArray<UActorComponent*> _ActorComps;
+	GetActorCom*/
 }
 
 void AGunBase::Tick(float DeltaTime)
@@ -73,6 +81,31 @@ void AGunBase::AddRecoilOffset()
 	_GotoKickBack = FinalKickBackOffset;
 	_bCanRecoverKickBackRecoil = false;
 	//_CurrentKickBack = _GotoKickBack;
+}
+
+void AGunBase::AddFirearmActionComponent(UFirearmAction* FirearmAction)
+{
+	_FirearmActions.Add(FirearmAction);
+}
+
+void AGunBase::MainGrabPointGrabbed(AVRHand* Hand)
+{
+	Super::MainGrabPointGrabbed(Hand);
+
+	for (UFirearmAction* FA : _FirearmActions)
+	{
+		FA->SetWeaponGrabbed(true);
+	}
+}
+
+void AGunBase::MainGrabPointReleased(AVRHand* Hand)
+{
+	Super::MainGrabPointReleased(Hand);
+
+	for (UFirearmAction* FA : _FirearmActions)
+	{
+		FA->SetWeaponGrabbed(false);
+	}
 }
 
 void AGunBase::TriggerPressed(float Value)
@@ -239,7 +272,6 @@ void AGunBase::HandleRecoil()
 	_PHC->SetTargetRotationOffset(HorizontalOffset * VerticalOffset);
 
 	HandleRecoilRecover();
-	
 }
 
 void AGunBase::ConsistantResetToValue(float& CurrentValue, float GotoValue, float Alpha)
@@ -315,5 +347,13 @@ void AGunBase::ConsistantResetToValue(FVector& CurrentValue, FVector GotoValue, 
 
 		if (CurrentValue.Z > GotoValue.Z)
 			CurrentValue.Z = GotoValue.Z;
+	}
+}
+
+void AGunBase::HardReloadWeapon()
+{
+	for (UFirearmAction* FA : _FirearmActions)
+	{
+		FA->HardReload();
 	}
 }

@@ -18,6 +18,7 @@ class UVRCharacterAB;
 class UMotionControllerComponent;
 struct FClimbingHandInfo;
 enum EClimbingMode;
+class USphereComponent;
 
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class VRTOOLKIT_API AVRCharacter : public APawn
@@ -43,7 +44,7 @@ public:
 
 	FVector GetCollisionLocation();
 
-	void HandGrabbedClimbingPoint(bool LeftHand, EClimbingMode AttemptedClimbingMode);
+	void HandGrabbedClimbingPoint(bool LeftHand, FQuat ClimbingHandQuat, EClimbingMode AttemptedClimbingMode);
 
 	FClimbingHandInfo GetLeftHandClimbInfo();
 
@@ -55,6 +56,7 @@ public:
 	const FVector GetDesiredVelocity();
 
 	FVector GetCharacterCollisionLocation();
+
 protected:
 	UPROPERTY(EditAnywhere)
 	UVRPawnComponent* _VRPawnComp;
@@ -126,6 +128,9 @@ private:
 	AVRHand* _LeftHand = NULL;
 	AVRHand* _RightHand = NULL;
 
+	UPROPERTY(VisibleAnywhere)
+	USphereComponent* _ClimbingZoneDetection;
+
 	bool _LeftHandGrabbedEGB = false;
 	bool _RightHandGrabbedEGB = false;
 //Replicated Variables
@@ -135,6 +140,9 @@ protected:
 
 	UPROPERTY(Replicated)
 		FRotator _LastKNownHMDRotation = FRotator::ZeroRotator;
+
+	UFUNCTION(BlueprintCallable)
+		FTransform GetVRCameraTransorm();
 
 //RPC Functions
 protected:

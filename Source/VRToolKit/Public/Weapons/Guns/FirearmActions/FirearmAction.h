@@ -38,6 +38,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	virtual void SetHandGrabPos(USkeletalMeshComponent* SKMesh) { _HandGrabPose = SKMesh; }
 
+	virtual void HardReload();
+
+	virtual void SetWeaponGrabbed(bool bGrabbed);
 protected:
 	/* To save some performance, the line lengh should be precalculated in the component, if it hasnt be 
 	calculated set it to less than 0 and it will be performed in this function*/
@@ -46,4 +49,5 @@ protected:
 	UPROPERTY(VisibleAnywhere)
 	USkeletalMeshComponent* _HandGrabPose;
 
+	bool _bWeaponIsGrabbed = false;
 };

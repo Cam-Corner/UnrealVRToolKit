@@ -118,13 +118,11 @@ void AVRHand::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (_GripCheckTimer > 0 && !_GrabbedEGC && !_DynamicGrabbed_ActorGrabbed && !_Vaulting_Actor)
+	if (_GripCheckTimer > 0 && !_GrabbedEGC && !_DynamicGrabbed_ActorGrabbed && !_Vaulting_Actor && !_ComponentHeld)
 	{
 		_GripCheckTimer -= DeltaTime;
 		GripPressCheck();
 	}
-
-	
 
 	bool UsingHMD = UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled();
 
@@ -136,6 +134,7 @@ void AVRHand::Tick(float DeltaTime)
 			FTransform FinalHandLoc = _ClimbingGrabTransform;
 			FinalHandLoc.SetLocation(FinalHandLoc.GetLocation() + _ClimbingInfo._EGC_MoveDiff);
 			_ControllerSKM->SetWorldTransform(FinalHandLoc);
+			_ClimbingInfo._HandQuat = GetActorQuat();
 			//_PHC->SetTargetTransform(FinalHandLoc);
 			//_PHC->SetTargetLocationOffset(FVector::ZeroVector);
 			//_PHC->SetTargetRotationOffset(FQuat(FRotator(0, 0, 0)));
@@ -248,7 +247,7 @@ bool AVRHand::CheckDynamicEdgeGrap()
 	FVector3f ParmBoxSize = FVector3f(_ParmEdgeDetectBoxExtent.X, _ParmEdgeDetectBoxExtent.Y, ZParmSize);
 
 	//Check to see if our parm hits anything
-	FVector ParmHitStart = GetActorLocation() + (FVector::UpVector * (ZParmSize - (_MaxSizeCheckUnderParm / 2)));
+	FVector ParmHitStart = GetActorLocation(); /*+ (FVector::UpVector * (ZParmSize - (_MaxSizeCheckUnderParm / 2)))*/;
 	FVector ForwardDir = GetActorForwardVector();
 	//ForwardDir.Z = 0;
 	//ForwardDir.Normalize();
@@ -344,8 +343,7 @@ bool AVRHand::CheckDynamicEdgeGrap()
 	if (bEdgeGrabbed)
 	{
 		_DynamicGrabbed_ActorGrabbed = FingersHit.GetActor();
-		
-		ChangeClimbingMode(EClimbingMode::ECM_GrabbedClimbing);
+
 
 		FVector NewGrabLocation = ParmHit.Location;
 		NewGrabLocation.Z = FingersHit.Location.Z;
@@ -366,6 +364,8 @@ bool AVRHand::CheckDynamicEdgeGrap()
 
 		_ClimbingGrabTransform.SetRotation(NewRotation);
 
+
+		ChangeClimbingMode(EClimbingMode::ECM_GrabbedClimbing);
 		return true;
 	}
 
@@ -471,9 +471,6 @@ void AVRHand::ChangeClimbingMode(EClimbingMode AttemptedClimbingMode)
 	if (!_CharacterAttachedTo || !_MotionControllerComp ||!_PHC)
 		return;
 
-	_ClimbingInfo._GrabbedLocation = GetActorLocation();//_MotionControllerComp->GetComponentLocation();
-	_ClimbingInfo._HandForwardDir = GetActorForwardVector();
-	_CharacterAttachedTo->HandGrabbedClimbingPoint(!GetIsRightHand(), AttemptedClimbingMode);
 
 	switch (AttemptedClimbingMode)
 	{
@@ -498,6 +495,10 @@ void AVRHand::ChangeClimbingMode(EClimbingMode AttemptedClimbingMode)
 	default:
 		break;
 	}
+
+	_ClimbingInfo._GrabbedLocation = GetActorLocation();//_MotionControllerComp->GetComponentLocation();
+	_ClimbingInfo._HandQuat = GetActorQuat();
+	_CharacterAttachedTo->HandGrabbedClimbingPoint(!GetIsRightHand(), GetActorQuat(), AttemptedClimbingMode);
 }
 
 void AVRHand::GripPressCheck()
@@ -514,6 +515,20 @@ void AVRHand::GripPressCheck()
 		_GrabbedEGC = _EnvironmentGrabCompArray[0];
 		_GrabbedEGC->GrabComponent(this);
 		_ClimbingInfo._EGC_StartLocation = _GrabbedEGC->GetComponentLocation();
+
+
+		FVector NewGrabLocation = _EnvironmentGrabCompArray[0]->GetLocationOnZone(GetActorLocation());
+		_ClimbingGrabTransform.SetLocation(NewGrabLocation - FVector(0, 0, _HandHeightClimbingGrabOffset));
+
+		FQuat NewRotation(FRotator(90, 0, 0));
+
+		float YawAngle = ExtraMaths::GetSignedAngleOfTwoVectors(NewRotation.GetUpVector(), -GetActorForwardVector(), -NewRotation.GetRightVector());
+		FVector YawCrossP = FVector::CrossProduct(NewRotation.GetForwardVector(), GetActorForwardVector());
+		FQuat YawQuatOffset = FQuat(FVector::ForwardVector, FMath::DegreesToRadians(YawAngle));
+		NewRotation = NewRotation * YawQuatOffset;
+
+		_ClimbingGrabTransform.SetRotation(NewRotation);
+
 
 		ChangeClimbingMode(EClimbingMode::ECM_GrabbedClimbing);
 	}
@@ -630,7 +645,7 @@ void AVRHand::GripPressed()
 	{
 		_bDoneGrab = true;
 
-		_GripCheckTimer = .5f;
+		_GripCheckTimer = 1.0f;
 	}
 
 	

@@ -62,6 +62,9 @@ public:
 
 	virtual void SetHandGrabPos(USkeletalMeshComponent* SKMesh) override;
 
+	virtual void HardReload() override;
+
+	virtual void SetWeaponGrabbed(bool bGrabbed) override;
 protected:
 	UFUNCTION()
 	void SliderGrabbed(AVRHand* Hand);
@@ -95,7 +98,6 @@ protected:
 
 	UFUNCTION()
 		void ChangeFireMode();
-
 
 	/* Blueprint getter functions used for passing variables to the animation BP */
 protected:

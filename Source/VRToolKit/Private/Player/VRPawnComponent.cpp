@@ -10,6 +10,8 @@
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "Player/VRHand.h"
 #include "Player/VRCharacter.h"
+#include "Components/SphereComponent.h"
+#include "ClimbingSystem/EnvironmentGrabComponent.h"
 
 DEFINE_LOG_CATEGORY(LogUVRPawnComponent);
 
@@ -32,38 +34,46 @@ void UVRPawnComponent::BeginPlay()
 	{
 		//Straight up/down
 		_ClimbingFlingAllowedDirections.Add(FVector::UpVector);
-		_ClimbingFlingAllowedDirections.Add(-FVector::UpVector);
+		//_ClimbingFlingAllowedDirections.Add(-FVector::UpVector);//dont need down because we can just let go and let gravity takeover
+
+		//Forward/Backward
+		_ClimbingFlingAllowedDirections.Add(FVector(1, 0, .3f));
+		_ClimbingFlingAllowedDirections.Add(FVector(-1, 0, .3f));
+
+		//Left/Right
+		_ClimbingFlingAllowedDirections.Add(FVector(0, 1, .3f));
+		_ClimbingFlingAllowedDirections.Add(FVector(0, -1, .3f));
 
 		//Up Angles
-		_ClimbingFlingAllowedDirections.Add(FVector(1, -1, 1).GetSafeNormal());
-		_ClimbingFlingAllowedDirections.Add(FVector(1, 0, 1).GetSafeNormal());
-		_ClimbingFlingAllowedDirections.Add(FVector(1, 1, 1).GetSafeNormal());
-		_ClimbingFlingAllowedDirections.Add(FVector(-1, -1, 1).GetSafeNormal());
-		_ClimbingFlingAllowedDirections.Add(FVector(-1, 0, 1).GetSafeNormal());
-		_ClimbingFlingAllowedDirections.Add(FVector(-1, -1, 1).GetSafeNormal());
-		_ClimbingFlingAllowedDirections.Add(FVector(0, -1, 1).GetSafeNormal());
-		_ClimbingFlingAllowedDirections.Add(FVector(0, 1, 1).GetSafeNormal());
+		/*_ClimbingFlingAllowedDirections.Add(FVector(1, -1, 1.2f).GetSafeNormal());
+		_ClimbingFlingAllowedDirections.Add(FVector(1, 0, 1.2f).GetSafeNormal());
+		_ClimbingFlingAllowedDirections.Add(FVector(1, 1, 1.2f).GetSafeNormal());
+		_ClimbingFlingAllowedDirections.Add(FVector(-1, -1, 1.2f).GetSafeNormal());
+		_ClimbingFlingAllowedDirections.Add(FVector(-1, 0, 1.2f).GetSafeNormal());
+		_ClimbingFlingAllowedDirections.Add(FVector(-1, -1, 1.2f).GetSafeNormal());
+		_ClimbingFlingAllowedDirections.Add(FVector(0, -1, 1.2f).GetSafeNormal());
+		_ClimbingFlingAllowedDirections.Add(FVector(0, 1, 1.2f).GetSafeNormal());
 
 
 		//0 Z axis
-		_ClimbingFlingAllowedDirections.Add(FVector::RightVector);
-		_ClimbingFlingAllowedDirections.Add(-FVector::RightVector);
-		_ClimbingFlingAllowedDirections.Add(FVector::ForwardVector);
-		_ClimbingFlingAllowedDirections.Add(-FVector::ForwardVector);
-		_ClimbingFlingAllowedDirections.Add(FVector(1, -1, 0).GetSafeNormal());
-		_ClimbingFlingAllowedDirections.Add(FVector(1, 1, 0).GetSafeNormal());
-		_ClimbingFlingAllowedDirections.Add(FVector(-1, 1, 0).GetSafeNormal());
-		_ClimbingFlingAllowedDirections.Add(FVector(-1, -1, 0).GetSafeNormal());
+		_ClimbingFlingAllowedDirections.Add(FVector(0, 1, 0.2f).GetSafeNormal());
+		_ClimbingFlingAllowedDirections.Add(FVector(0, -1, 0.2f).GetSafeNormal());
+		_ClimbingFlingAllowedDirections.Add(FVector(1, 0, 0.2f).GetSafeNormal());
+		_ClimbingFlingAllowedDirections.Add(FVector(-1, 0, 0.2f).GetSafeNormal());
+		_ClimbingFlingAllowedDirections.Add(FVector(1, -1, 0.2f).GetSafeNormal());
+		_ClimbingFlingAllowedDirections.Add(FVector(1, 1, 0.2f).GetSafeNormal());
+		_ClimbingFlingAllowedDirections.Add(FVector(-1, 1, 0.2f).GetSafeNormal());
+		_ClimbingFlingAllowedDirections.Add(FVector(-1, -1, 0.2f).GetSafeNormal());
 
 		//down Angles
-		_ClimbingFlingAllowedDirections.Add(FVector(1, -1, -1).GetSafeNormal());
-		_ClimbingFlingAllowedDirections.Add(FVector(1, 0, -1).GetSafeNormal());
-		_ClimbingFlingAllowedDirections.Add(FVector(1, 1, -1).GetSafeNormal());
-		_ClimbingFlingAllowedDirections.Add(FVector(-1, -1, -1).GetSafeNormal());
-		_ClimbingFlingAllowedDirections.Add(FVector(-1, 0, -1).GetSafeNormal());
-		_ClimbingFlingAllowedDirections.Add(FVector(-1, -1, -1).GetSafeNormal());
-		_ClimbingFlingAllowedDirections.Add(FVector(0, -1, -1).GetSafeNormal());
-		_ClimbingFlingAllowedDirections.Add(FVector(0, 1, -1).GetSafeNormal());
+		_ClimbingFlingAllowedDirections.Add(FVector(1, -1, -1.2f).GetSafeNormal());
+		_ClimbingFlingAllowedDirections.Add(FVector(1, 0, -1.2f).GetSafeNormal());
+		_ClimbingFlingAllowedDirections.Add(FVector(1, 1, -1.2f).GetSafeNormal());
+		_ClimbingFlingAllowedDirections.Add(FVector(-1, -1, -1.2f).GetSafeNormal());
+		_ClimbingFlingAllowedDirections.Add(FVector(-1, 0, -1.2f).GetSafeNormal());
+		_ClimbingFlingAllowedDirections.Add(FVector(-1, -1, -1.2f).GetSafeNormal());
+		_ClimbingFlingAllowedDirections.Add(FVector(0, -1, -1.2f).GetSafeNormal());
+		_ClimbingFlingAllowedDirections.Add(FVector(0, 1, -1.2f).GetSafeNormal());*/
 	}
 
 
@@ -96,8 +106,8 @@ void UVRPawnComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 	if (_OwningPawn && _OwningPawn->IsLocallyControlled())
 	{
 		ClientSideHandler(DeltaTime);
-		GEngine->AddOnScreenDebugMessage(312, .1f, FColor::Green, "LastFloorHit: " + _LastFloorHit._FloorHitNormal.ToString());
-		GEngine->AddOnScreenDebugMessage(313, .1f, FColor::Green, "VelocityDir: " + _Velocity.GetSafeNormal().ToString());
+		//GEngine->AddOnScreenDebugMessage(312, .1f, FColor::Green, "LastFloorHit: " + _LastFloorHit._FloorHitNormal.ToString());
+		//GEngine->AddOnScreenDebugMessage(313, .1f, FColor::Green, "VelocityDir: " + _Velocity.GetSafeNormal().ToString());
 		/*For cases where we havnt consumed the input / rotation vectors, we should do it anyway so it doesnt happen in a different frame
 		and be unexpected for the player*/
 		/*FVector ConsumedMove = ConsumeMovementInput();
@@ -124,11 +134,18 @@ void UVRPawnComponent::AddRotationInput(FRotator Rot)
 	_RotationToConsume += Rot;
 }
 
-void UVRPawnComponent::SetCachedComponents(UCapsuleComponent* Capsule, UCameraComponent* Camera, USceneComponent* VROrigin)
+void UVRPawnComponent::SetCachedComponents(UCapsuleComponent* Capsule, UCameraComponent* Camera, USceneComponent* VROrigin, USphereComponent* ClimbingDetectionZone)
 {
 	_CachedCapsule = Capsule;
 	_CachedCamera = Camera;
 	_CachedVROrigin = VROrigin;
+	_CachedClimbingDetectionZone = ClimbingDetectionZone;
+
+	if (_CachedClimbingDetectionZone)
+	{
+		_CachedClimbingDetectionZone->OnComponentBeginOverlap.AddDynamic(this, &UVRPawnComponent::ClimbingDetectionZoneBeginOverlap);
+		_CachedClimbingDetectionZone->OnComponentEndOverlap.AddDynamic(this, &UVRPawnComponent::ClimbingDetectionZoneEndOverlap);
+	}
 }
 
 void UVRPawnComponent::FollowCameraPitchRotation(bool bUsePitch)
@@ -182,12 +199,39 @@ void UVRPawnComponent::RecenterHMDClimbing()
 	_CachedCapsule->AddWorldOffset(-MoveOffset);
 }
 
-void UVRPawnComponent::HandGrabbedClimbingPoint(bool LeftHand, EClimbingMode AttemptedClimbingMode)
+void UVRPawnComponent::HandGrabbedClimbingPoint(bool LeftHand, FQuat ClimbingHandQuat, EClimbingMode AttemptedClimbingMode)
 {
-	if (LeftHand)
-		_LeftHandClimbingMode = AttemptedClimbingMode;
+	if (!_CachedCapsule)
+		return;
+
+	if (_LeftHandClimbingMode == EClimbingMode::ECM_None || _RightHandClimbingMode == EClimbingMode::ECM_None)
+		_ClimbingStartingForwardDir = _CachedCapsule->GetForwardVector();
+
+	if (AttemptedClimbingMode != EClimbingMode::ECM_GrabbedClimbing)
+	{
+		if (LeftHand)
+			_bUseLeftHandQuat = false;
+		else
+			_bUseLeftHandQuat = true;
+	}
 	else
+	{
+		if (LeftHand && _RightHandClimbingMode != EClimbingMode::ECM_GrabbedClimbing)
+			_bUseLeftHandQuat = true;
+		else if (!LeftHand && _LeftHandClimbingMode != EClimbingMode::ECM_GrabbedClimbing)
+			_bUseLeftHandQuat = false;
+	}
+
+	if (LeftHand)
+	{
+		_LeftHandClimbingMode = AttemptedClimbingMode;
+		_LeftHandClimbingQuat = ClimbingHandQuat;
+	}
+	else
+	{
 		_RightHandClimbingMode = AttemptedClimbingMode;
+		_RightHandClimbingQuat = ClimbingHandQuat;
+	}
 
 	if (_LeftHandClimbingMode != EClimbingMode::ECM_None || _RightHandClimbingMode != EClimbingMode::ECM_None)
 	{
@@ -202,9 +246,15 @@ void UVRPawnComponent::HandGrabbedClimbingPoint(bool LeftHand, EClimbingMode Att
 			if (AVRCharacter* VRC = Cast<AVRCharacter>(_OwningPawn))
 			{
 				if (LeftHand)
-					_VaultingForwardDir = VRC->GetLeftHandClimbInfo()._HandForwardDir;
+				{
+					_VaultingForwardDir = VRC->GetLeftHandClimbInfo()._HandQuat.GetForwardVector();
+					_LeftHandClimbingQuat = VRC->GetLeftHandClimbInfo()._HandQuat;
+				}
 				else
-					_VaultingForwardDir = VRC->GetRightHandClimbInfo()._HandForwardDir;
+				{
+					_VaultingForwardDir = VRC->GetRightHandClimbInfo()._HandQuat.GetForwardVector();
+					_RightHandClimbingQuat = VRC->GetRightHandClimbInfo()._HandQuat;
+				}
 			}
 		}
 
@@ -227,10 +277,18 @@ void UVRPawnComponent::HandGrabbedClimbingPoint(bool LeftHand, EClimbingMode Att
 		_CachedCapsule->AddWorldOffset(FVector(0, 0, 95.f - OldHalfHeight));
 		_CachedCapsule->AddWorldOffset(FVector(0, 0, -5), true);
 
-		_InJump = true;
-		_Velocity = GetClimbingFlingDirection() * _ClimbingFlingMovementSpeed;
-		_bIsFlingJump = true;
-		GEngine->AddOnScreenDebugMessage(526, 50.f, FColor::Blue, _Velocity.ToString());
+		FVector FlingDir = GetClimbingFlingDirection(LeftHand);
+		if (FlingDir != FVector::ZeroVector)
+		{
+			_InJump = true;
+			_Velocity = FlingDir * _ClimbingFlingMovementSpeed;
+			_CurrentClimbingFlingGravityStrength = _ClimbingFlingGravityStrength;
+			_CurrentClimbingFlingWaitTime = _ClimbingFlingWaitTimeBeforeFalling;
+			//_Velocity.Z = 0;//gravity will take over the falling
+			_bIsFlingJump = true;
+			//_CurrentGravityStrength = _ClimbingFlingGravityStrength;
+			//GEngine->AddOnScreenDebugMessage(526, 50.f, FColor::Blue, _Velocity.ToString());
+		}
 	}
 }
 
@@ -256,7 +314,6 @@ void UVRPawnComponent::ClientSideHandler(float DeltaTime)
 
 	_bUsingHMD = UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled();
 	
-
 	if (!_bUsingHMD)
 	{
 		FRotator RotOffset = ConsumeRotationInput();
@@ -294,35 +351,34 @@ void UVRPawnComponent::ClientSideHandler(float DeltaTime)
 	switch (_MovementState)
 	{
 	case EMovementModes::EMM_Grounded:
-		GEngine->AddOnScreenDebugMessage(99, .1f, FColor::Yellow, "Movement State: Grounded");
+		//GEngine->AddOnScreenDebugMessage(99, .1f, FColor::Yellow, "Movement State: Grounded");
 		HandleGroundedModeNew(DeltaTime);
 		break;
 	case EMovementModes::EMM_Falling:
-		GEngine->AddOnScreenDebugMessage(99, .5f, FColor::Yellow, "Movement State: Falling");
+		//GEngine->AddOnScreenDebugMessage(99, .5f, FColor::Yellow, "Movement State: Falling");
 		HandleFallingMode(DeltaTime);
 		break;
 	case EMovementModes::EMM_Climbing:
 		HandleClimbingMode(DeltaTime);
-		GEngine->AddOnScreenDebugMessage(99, .1f, FColor::Yellow, "Movement State: Climbing");
+		//GEngine->AddOnScreenDebugMessage(99, .1f, FColor::Yellow, "Movement State: Climbing");
 		break;
 	case EMovementModes::EMM_Swimming:
-		GEngine->AddOnScreenDebugMessage(99, .1f, FColor::Yellow, "Movement State: Swimming");
+		//GEngine->AddOnScreenDebugMessage(99, .1f, FColor::Yellow, "Movement State: Swimming");
 		break;
 	case EMovementModes::EMM_Flying:
-		GEngine->AddOnScreenDebugMessage(99, .1f, FColor::Yellow, "Movement State: Flying");
+		//GEngine->AddOnScreenDebugMessage(99, .1f, FColor::Yellow, "Movement State: Flying");
 		break;
 	case EMovementModes::EMM_RampSliding:
-		GEngine->AddOnScreenDebugMessage(99, .5f, FColor::Yellow, "Movement State: RampSliding");
+		//GEngine->AddOnScreenDebugMessage(99, .5f, FColor::Yellow, "Movement State: RampSliding");
 		HandleRampSliding(DeltaTime);
 		break;
 	case EMovementModes::EMM_Custom:
-		GEngine->AddOnScreenDebugMessage(99, .1f, FColor::Yellow, "Movement State: Custom");
+		//GEngine->AddOnScreenDebugMessage(99, .1f, FColor::Yellow, "Movement State: Custom");
 		break;
 	default:
 		break;
 	}
-	GEngine->AddOnScreenDebugMessage(100, .5f, FColor::Yellow, "MovementSpeed: " + FString::SanitizeFloat(_Velocity.Size()));
-
+	//GEngine->AddOnScreenDebugMessage(100, .5f, FColor::Yellow, "MovementSpeed: " + FString::SanitizeFloat(_Velocity.Size()));
 
 	//Send info to server
 	FVRPawnSnapShot PSS;
@@ -409,10 +465,6 @@ void UVRPawnComponent::HandleGroundedMode(float DeltaTime)
 		}
 	}
 
-	/* Make capsule face the direction of the movement forward dir (For example the HMD) */
-	FRotator Rot = _CachedCapsule->GetComponentRotation();
-	Rot.Yaw = _CachedCamera->GetComponentRotation().Yaw;
-	_CachedCapsule->SetWorldRotation(Rot);
 	
 	//DrawDebugLine(GetWorld(), FloorCheckHit.ImpactPoint, FloorCheckHit.ImpactPoint + (FloorCheckHit.ImpactNormal * 50), FColor::Red, false, 5.f);
 
@@ -471,6 +523,9 @@ void UVRPawnComponent::HandleGroundedMode(float DeltaTime)
 	float Amount = _Velocity.Size();
 
 	MoveCapsule(Dir, Amount, DeltaTime, false);
+
+	//rotate the capsule to face head dir
+	RotateCapsuleToFaceHeadDirection();
 }
 
 void UVRPawnComponent::HandleGroundedModeNew(float DeltaTime)
@@ -565,6 +620,8 @@ void UVRPawnComponent::HandleGroundedModeNew(float DeltaTime)
 	
 	//GEngine->AddOnScreenDebugMessage(314, .1f, FColor::Green, "LastFloorHit: " + _LastValidFloorNormal.ToString());
 
+	//rotate the capsule to face head dir
+	RotateCapsuleToFaceHeadDirection();
 }
 
 bool UVRPawnComponent::HandleCharacterStepUp(FHitResult MovementHit, FVector MissingMove, float DeltaTime)
@@ -612,13 +669,80 @@ void UVRPawnComponent::HandleFallingMode(float DeltaTime)
 	if (!_CachedCapsule)
 		return;
 
-	if(!_bIsFlingJump)
+	/*if (_Velocity.Z > 0)
+	{
 		_Velocity.Z -= _Gravity * DeltaTime;
+	}
 	else
+	{
+		_Velocity.Z -= (_Gravity * _CurrentGravityStrength) * DeltaTime;
+	}
+	
+	if (!_bIsFlingJump)
+	{
+		
+	}
+	else
+	{
 		_Velocity.Z -= (_Gravity * _ClimbingFlingGravityStrength) * DeltaTime;
+	}*/
 
-	if(_Velocity.Z <= 0)
+	//_Velocity.Z -= (_Gravity * _CurrentGravityStrength) * DeltaTime;
+	
+	//if fling jump then ignore gravity so the player can get to the location
+	/*if (_bIsFlingJump)
+	{
+		FVector NewLoc = _CachedCapsule->GetComponentLocation();
+		FVector NewMoveDir = (_FlingJumpGotoLoc - NewLoc).GetSafeNormal();
+		float MoveSpeed = _ClimbingFlingMovementSpeed * DeltaTime;
+		float Distance = FVector::Distance(NewLoc, _FlingJumpGotoLoc);
+		NewLoc += NewMoveDir * MoveSpeed;
+
+		if (Distance < MoveSpeed)
+		{
+			NewLoc = _FlingJumpGotoLoc;
+			_bIsFlingJump = false;
+			_CurrentClimbingFlingWaitTime = _ClimbingFlingWaitTimeBeforeFalling;
+		}
+
+		FHitResult FlingHitSomething;
+		_CachedCapsule->AddWorldOffset(NewLoc - _CachedCapsule->GetComponentLocation(), true, &FlingHitSomething);
+
+		if (FlingHitSomething.bBlockingHit)
+		{
+			_bIsFlingJump = false;
+			_CurrentClimbingFlingWaitTime = _ClimbingFlingWaitTimeBeforeFalling;
+		}
+		RecenterHMD();
+		return;
+	}
+
+	if (_CurrentClimbingFlingWaitTime > 0)
+	{
+		_CurrentClimbingFlingWaitTime -= DeltaTime;
+		_CurrentClimbingFlingGravityStrength = _ClimbingFlingGravityStrength;
+		return;
+	}*/
+
+
+	_Velocity.Z -= _Gravity *  DeltaTime * _CurrentClimbingFlingGravityStrength;
+
+	if (_Velocity.Z <= 0)
+	{
 		_Velocity.Z = FMath::Clamp(_Velocity.Z, -_Gravity, 0);
+
+		if (_bIsFlingJump)
+		{
+			_CurrentClimbingFlingWaitTime -= DeltaTime;
+			
+			if (_CurrentClimbingFlingWaitTime <= 0)
+			{
+				_CurrentClimbingFlingGravityStrength = 1;
+				_bIsFlingJump = false;
+			}
+			
+		}
+	}
 
 	if (_Velocity.Z <= 0 && _InJump)
 		_InJump = false;
@@ -703,6 +827,9 @@ void UVRPawnComponent::HandleFallingMode(float DeltaTime)
 	FVector Dir = _Velocity.GetSafeNormal();
 	float Amount = _Velocity.Size();
 	MoveCapsule(Dir, Amount, DeltaTime, false);
+
+	//rotate the capsule to face head dir
+	//RotateCapsuleToFaceHeadDirection();
 }
 
 void UVRPawnComponent::HandleClimbingMode(float DeltaTime)
@@ -715,25 +842,99 @@ void UVRPawnComponent::HandleClimbingMode(float DeltaTime)
 	switch (_ClimbingMode)
 	{
 	case EClimbingMode::ECM_GrabbedClimbing:
-		GEngine->AddOnScreenDebugMessage(99, .1f, FColor::Yellow, "Movement State: Grabbed Climbing");
+		//GEngine->AddOnScreenDebugMessage(99, .1f, FColor::Yellow, "Movement State: Grabbed Climbing");
 		Offset = WorkOutGrabbedClimbingModeOffset();
 		break;
 	case EClimbingMode::ECM_Vaulting:
-		GEngine->AddOnScreenDebugMessage(99, .1f, FColor::Yellow, "Movement State: Vaulting Climbing");
+		//GEngine->AddOnScreenDebugMessage(99, .1f, FColor::Yellow, "Movement State: Vaulting Climbing");
 		Offset = WorkOutVaultingClimbingModeOffset();
 		break;
 	default:
 		break;
 	}
-	
+
 	UpdateXYVelocity(DeltaTime, _Velocity.GetSafeNormal(), 0);
+
+	FQuat NewOriginQuat = _CachedVROrigin->GetComponentQuat();
+	FQuat NewCapQuat = _CachedCapsule->GetComponentQuat();
+	FVector CapBackVector = -_CachedCapsule->GetForwardVector();
+	FVector CapLeftVector = -_CachedCapsule->GetRightVector();
+	float OriginYawDiff = 0;
+
+	FQuat QuatToUse = FQuat(1);
+	FVector HandLocToUse = FVector::ZeroVector;
+
+	/*if (_LeftHandClimbingMode == EClimbingMode::ECM_GrabbedClimbing && _RightHandClimbingMode == EClimbingMode::ECM_GrabbedClimbing)
+	{
+		FVector LeftHandDir = _LeftHandClimbingQuat.GetUpVector();
+		LeftHandDir.Z = 0;
+		FVector RightHandDir = _RightHandClimbingQuat.GetUpVector();
+		RightHandDir.Z = 0;
+		float MiddleAngle = ExtraMaths::GetAngleOfTwoVectors(LeftHandDir, RightHandDir);
+		FVector MiddleDir = LeftHandDir.RotateAngleAxis(MiddleAngle / 2, FVector::CrossProduct(LeftHandDir, RightHandDir));
+
+		float YawDifference = ExtraMaths::GetSignedAngleOfTwoVectors(CapBackVector, MiddleDir, CapLeftVector);
+
+		FRotator NewCapRot = _CachedCapsule->GetComponentRotation();
+		NewCapRot.Yaw += YawDifference;
+		NewCapQuat = FQuat(NewCapRot);
+
+		FRotator NewOriginRot = _CachedVROrigin->GetComponentRotation();
+		NewOriginRot.Yaw += YawDifference;
+		NewOriginQuat = FQuat(NewOriginRot);
+	}
+	else*/ if (_LeftHandClimbingMode == EClimbingMode::ECM_GrabbedClimbing && _bUseLeftHandQuat)
+	{
+		FVector LeftHandDir = _LeftHandClimbingQuat.GetUpVector();
+		LeftHandDir.Z = 0;
+		float YawDifference = ExtraMaths::GetSignedAngleOfTwoVectors(CapBackVector, LeftHandDir.GetSafeNormal(), CapLeftVector);
+
+		FRotator NewOriginRot = _CachedVROrigin->GetComponentRotation();
+		NewOriginRot.Yaw += YawDifference;
+		NewOriginQuat = FQuat(NewOriginRot);
+		OriginYawDiff = YawDifference;
+
+		QuatToUse = _LeftHandClimbingQuat;
+		HandLocToUse = _LeftHandClimbingLocation;
+	}
+	else if (_RightHandClimbingMode == EClimbingMode::ECM_GrabbedClimbing && !_bUseLeftHandQuat)
+	{
+		FVector RightHandDir = _RightHandClimbingQuat.GetUpVector();
+		RightHandDir.Z = 0;
+		float YawDifference = ExtraMaths::GetSignedAngleOfTwoVectors(CapBackVector, RightHandDir.GetSafeNormal(), CapLeftVector);
+
+		FRotator NewOriginRot = _CachedVROrigin->GetComponentRotation();
+		NewOriginRot.Yaw += YawDifference;
+		NewOriginQuat = FQuat(NewOriginRot);
+		OriginYawDiff = YawDifference;
+
+		//Offset += RightHandDir.GetSafeNormal() * _CachedCapsule->GetScaledCapsuleRadius() + 5.f;
+		QuatToUse = _RightHandClimbingQuat;
+		HandLocToUse = _RightHandClimbingLocation;
+	}
+
+	//allign the cap along the climbing point (can only move up/down & left/right, not forward/backwards)
+	{
+		FVector FinalOffset = Offset;
+		FinalOffset.Z = 0;
+
+		float ZOffset = (_CachedCapsule->GetComponentLocation().Z + Offset.Z) - HandLocToUse.Z;
+		ZOffset = FMath::Clamp(ZOffset, -_ClimbingHeightMaxOffset * 100, _ClimbingHeightMaxOffset);
+		FinalOffset.Z = (HandLocToUse.Z + ZOffset) - _CachedCapsule->GetComponentLocation().Z;
+
+		//Offset = FinalOffset;
+	}
 
 	//Offset = WorkOutGrabbedClimbingModeOffset();
 	//Cant use the 'MoveCapsule' function because when when we have a blocking hit, it uses the missing move to slide along the surface,
 	//we dont want this for climbing because it makes the player slide around the wall that we dont want, instead we use trig to calculate
 	//where about we should be against the wall
 	FHitResult Hit;
-	_CachedCapsule->AddWorldOffset(Offset, true, &Hit);
+
+	if(OriginYawDiff < 5 && OriginYawDiff > -5)
+		_CachedCapsule->AddWorldOffset(Offset, true, &Hit);
+	else
+		_CachedCapsule->AddWorldOffset(Offset / 4, true, &Hit);
 
 	if (Hit.bBlockingHit)
 	{
@@ -746,10 +947,29 @@ void UVRPawnComponent::HandleClimbingMode(float DeltaTime)
 		FVector NewOffset = NewLoc - _CachedCapsule->GetComponentLocation();
 		_CachedCapsule->AddWorldOffset(NewOffset, true);
 	}
-
-	RecenterHMDClimbing();
-
+	
 	SaveClimbingLocation(DeltaTime);
+
+	
+
+	FVector OldCapLoc = _CachedCapsule->GetComponentLocation();
+	FVector OldVROrigin = _CachedVROrigin->GetComponentLocation();
+	FQuat NewVROriginQuat = FQuat::Slerp(_CachedVROrigin->GetComponentQuat(), NewOriginQuat, _ClimbingRotationSpeed);
+	_CachedVROrigin->SetWorldRotation(NewVROriginQuat);
+	_CachedCapsule->SetWorldLocation(OldCapLoc);
+	//_CachedVROrigin->AddWorldOffset(OldCapLoc - _CachedCapsule->GetComponentLocation(), false);
+	//New Rotation
+	/*FVector Distance = _CachedVROrigin->GetComponentLocation() - _CachedCapsule->GetComponentLocation();
+	FVector Rotation = Distance.RotateAngleAxis(OriginYawDiff, FVector(0, 0, 1));
+	FVector FinalLocation = _CachedCapsule->GetComponentLocation() + Rotation;
+
+	_CachedCapsule->SetWorldLocation(FinalLocation);
+	_CachedCapsule->AddRelativeRotation(FRotator(0, OriginYawDiff, 0));
+
+	//Need to move the cap back to where it was otherwhise it gets stuck in geometry
+	_CachedCapsule->SetWorldLocation(OldCapLoc);*/
+	//
+	RecenterHMDClimbing();
 }
 
 void UVRPawnComponent::MoveCapsule(FVector Dir, float MoveAmount, float DeltaTime, bool bIgnoreWalkableSurface)
@@ -908,7 +1128,7 @@ bool UVRPawnComponent::CheckIfWalkableAhead(const FHitResult& Hit)
 
 		if (AHeadHit.bBlockingHit && AHeadAngle < _MaxWalkableSlope)
 		{
-			GEngine->AddOnScreenDebugMessage(656, .1f, FColor::Yellow, "A Head Angle: " + FString::SanitizeFloat(Angle) + ": IsWalkable", false);
+			//GEngine->AddOnScreenDebugMessage(656, .1f, FColor::Yellow, "A Head Angle: " + FString::SanitizeFloat(Angle) + ": IsWalkable", false);
 			return true;
 		}
 
@@ -920,6 +1140,9 @@ bool UVRPawnComponent::CheckIfWalkableAhead(const FHitResult& Hit)
 
 void UVRPawnComponent::HandleHMDInputRotation(float DeltaTime)
 {
+	if (_MovementState == EMovementModes::EMM_Climbing)
+		return;
+
 	FRotator RotOffset = ConsumeRotationInput();
 
 	if (!_bDoSnapTurning && (RotOffset.Yaw > -0.3f && RotOffset.Yaw < 0.3f))
@@ -960,12 +1183,16 @@ void UVRPawnComponent::DoFloorCheck(FHitResult& FloorHit)
 	FLastFloorHit OldHit;
 	float CapHalfHeight = _CachedCapsule->GetScaledCapsuleHalfHeight();
 	float CapRadius = _CachedCapsule->GetScaledCapsuleRadius();
-	float SweepHalfHeight = CapHalfHeight * 0.8f;
-	float SweepRadius = CapRadius * 0.8f;
+	float SweepHalfHeight = CapHalfHeight;// *0.8f;
+	float SweepRadius = CapRadius;// *0.8f;
 	FVector CapLoc = _CachedCapsule->GetComponentLocation();
 
+	float FloorCheckZOffset = _PerchHeight;
+	if (_MovementState == EMovementModes::EMM_Grounded || _MovementState == EMovementModes::EMM_RampSliding)
+		FloorCheckZOffset += _MaxStepUpHeight;
+
 	FVector FloorCheckStart = CapLoc - FVector(0, 0, CapHalfHeight - SweepHalfHeight);
-	FVector FloorCheckEnd = FloorCheckStart - FVector(0, 0, _PerchHeight + _MaxStepUpHeight);
+	FVector FloorCheckEnd = FloorCheckStart - FVector(0, 0, FloorCheckZOffset);
 	FCollisionShape FloorCheckShape = FCollisionShape::MakeCapsule(SweepRadius, SweepHalfHeight);
 	FCollisionQueryParams ColParams;
 	ColParams.bTraceComplex = false;
@@ -1089,6 +1316,10 @@ FVector UVRPawnComponent::WorkOutTwoHandedCapsuleLocationForClimbing()
 	{
 		LeftHandClimbInfo = VRC->GetLeftHandClimbInfo();
 		RightHandClimbInfo = VRC->GetRightHandClimbInfo();
+		_LeftHandClimbingQuat = VRC->GetLeftHandClimbInfo()._HandQuat;
+		_RightHandClimbingQuat = VRC->GetRightHandClimbInfo()._HandQuat;
+		_LeftHandClimbingLocation = LeftHandClimbInfo._GrabbedLocation;
+		_RightHandClimbingLocation = RightHandClimbInfo._GrabbedLocation;
 
 		FVector FinalLefttLoc = LeftHandClimbInfo._GrabbedLocation + LeftHandClimbInfo._EGC_MoveDiff;
 		FVector FinalRightLoc = RightHandClimbInfo._GrabbedLocation + RightHandClimbInfo._EGC_MoveDiff;
@@ -1119,10 +1350,18 @@ FVector UVRPawnComponent::WorkOutOneHandedCapsuleLocationForClimbing(bool LeftHa
 	if (AVRCharacter* VRC = Cast<AVRCharacter>(_OwningPawn))
 	{
 		if (LeftHand)
+		{
 			HandClimbInfo = VRC->GetLeftHandClimbInfo();
-		else
-			HandClimbInfo = VRC->GetRightHandClimbInfo();
+			_LeftHandClimbingQuat = VRC->GetLeftHandClimbInfo()._HandQuat;
+			_LeftHandClimbingLocation = HandClimbInfo._GrabbedLocation;
 
+		}
+		else
+		{
+			HandClimbInfo = VRC->GetRightHandClimbInfo();
+			_RightHandClimbingQuat = VRC->GetRightHandClimbInfo()._HandQuat;
+			_RightHandClimbingLocation = HandClimbInfo._GrabbedLocation;
+		}
 		return -HandClimbInfo._Hand_MoveDiff;
 	}
 
@@ -1280,6 +1519,10 @@ void UVRPawnComponent::ChangeMovementMode(EMovementModes NewMovementMode)
 		_Velocity.Z = 0;
 		break;
 	case EMovementModes::EMM_Falling:
+		if (_InJump || _bIsFlingJump)
+		{
+			//_CurrentGravityStrength = _ClimbingFlingGravityStrength;
+		}
 		break;
 	case EMovementModes::EMM_RampSliding:
 		_Velocity = FVector::ZeroVector;
@@ -1312,6 +1555,11 @@ void UVRPawnComponent::HandleRampSliding(float DeltaTime)
 
 	UpdateXYVelocity(DeltaTime, Dir.GetSafeNormal(), VelMag);
 	MoveCapsule(_Velocity.GetSafeNormal(), _Velocity.Size(), DeltaTime, false);
+
+	RecenterHMD();
+
+	//rotate the capsule to face head dir
+	RotateCapsuleToFaceHeadDirection();
 }
 
 bool UVRPawnComponent::CheckForJump()
@@ -1320,6 +1568,7 @@ bool UVRPawnComponent::CheckForJump()
 	{
 		_Velocity.Z = _JumpZVel;
 		ChangeMovementMode(EMovementModes::EMM_Falling);
+		_CurrentClimbingFlingGravityStrength = 1;
 		return true;
 	}
 	return false;
@@ -1349,10 +1598,10 @@ bool UVRPawnComponent::LastGroundCheckCausedMovementStateChange()
 
 void UVRPawnComponent::SaveClimbingLocation(float DeltaTime)
 {
-	_ClimbingSaveLocTimer -= DeltaTime;
+	/*_ClimbingSaveLocTimer -= DeltaTime;
 
 	if (_ClimbingSaveLocTimer > 0)
-		return;
+		return;*/
 
 	if (!_CachedCapsule)
 		return;
@@ -1371,39 +1620,131 @@ void UVRPawnComponent::SaveClimbingLocation(float DeltaTime)
 	_CachedClimbingMoves[0] = _CachedCapsule->GetComponentLocation();
 }
 
-FVector UVRPawnComponent::GetClimbingFlingDirection()
+FVector UVRPawnComponent::GetClimbingFlingDirection(bool bLeftHand)
 {
+	if (!_CachedCapsule)
+		return FVector::ZeroVector;
+
+
+	FVector CapLoc = _CachedCapsule->GetComponentLocation();
 	float TotalMoveDistance = 0;
 	FVector TotalDirections = FVector::ZeroVector;
 
+	FQuat QuatToUse = bLeftHand ? _LeftHandClimbingQuat : _RightHandClimbingQuat;
+
 	for (int i = 0; i < _CachedClimbingMoves.Num(); i++)
 	{
-		if (i != 0)
+		if (i < _CachedClimbingMoves.Num() - 1)
 		{
-			TotalMoveDistance += FVector::DistSquared(_CachedClimbingMoves[0], _CachedClimbingMoves[i]);
-			TotalDirections += FVector(_CachedClimbingMoves[0] - _CachedClimbingMoves[i]).GetSafeNormal();
+			TotalMoveDistance += FVector::DistSquared(_CachedClimbingMoves[i], _CachedClimbingMoves[i + 1]);
+			TotalDirections += FVector(_CachedClimbingMoves[i] - _CachedClimbingMoves[i + 1]).GetSafeNormal();
 		}
 	}
 
-	if (TotalMoveDistance < 10)
+	//GEngine->AddOnScreenDebugMessage(54, 10.f, FColor::Blue, "Climbing DistSqr: " + FString::SanitizeFloat(TotalMoveDistance));
+
+	if (TotalMoveDistance < 25 * _CachedClimbingMoves.Num())
+	{
+		_FlingJumpGotoLoc = CapLoc;
 		return FVector::ZeroVector;
+	}
+	
+	if (AVRCharacter* VRC = Cast<AVRCharacter>(_OwningPawn))
+	{
+		if (bLeftHand)
+			return VRC->GetRightHand()->GetActorForwardVector();
+		else
+			return VRC->GetLeftHand()->GetActorForwardVector();
+	}
 
 	TotalDirections.Normalize();
-	FVector FinalFlingDir = FVector::ZeroVector;
+	FVector FinalDirection = FVector::ZeroVector;// TotalDirections;// * _RunSpeed;
 	float CurrenttDotP = 0;
 
-	for (int i = 0; i < _ClimbingFlingAllowedDirections.Num(); i++)
+	TArray<FVector> ClimbingFlingDirs;
+	ClimbingFlingDirs.Add(QuatToUse.GetForwardVector());
+	ClimbingFlingDirs.Add((QuatToUse.GetUpVector() + FVector(0, 0, .15f)).GetSafeNormal());
+	ClimbingFlingDirs.Add((QuatToUse.GetRightVector() + FVector(0, 0, .15f)).GetSafeNormal());
+	ClimbingFlingDirs.Add((-QuatToUse.GetRightVector() + FVector(0, 0, .15f)).GetSafeNormal());
+
+	/*ClimbingFlingDirs.Add((QuatToUse.GetUpVector() + FVector(0, 0, 1.15f)).GetSafeNormal());
+	ClimbingFlingDirs.Add((-QuatToUse.GetRightVector() + FVector(0, 0, 1.15f)).GetSafeNormal());
+	ClimbingFlingDirs.Add((QuatToUse.GetRightVector() + FVector(0, 0, 1.15f)).GetSafeNormal());
+
+	ClimbingFlingDirs.Add((QuatToUse.GetUpVector() + FVector(0, 0, -1.15f)).GetSafeNormal());
+	ClimbingFlingDirs.Add((-QuatToUse.GetRightVector() + FVector(0, 0, -1.15f)).GetSafeNormal());
+	ClimbingFlingDirs.Add((QuatToUse.GetRightVector() + FVector(0, 0, -1.15f)).GetSafeNormal());*/
+
+	FVector GotoLoc = TotalDirections * _CachedClimbingDetectionZone->GetScaledSphereRadius();
+	FVector FinalGotoLoc = CapLoc;
+
+	for (int i = 0; i < ClimbingFlingDirs.Num(); i++)
 	{
-		float DotP = FVector::DotProduct(TotalDirections, _ClimbingFlingAllowedDirections[i]);
+		/*FVector ClimbingGotoLoc = _ClimbingZones[i]->GetLocationOnZone(GotoLoc);
+		FVector GotoLocDir = (ClimbingGotoLoc - _CachedCapsule->GetComponentLocation()).GetSafeNormal();*/
+
+		float DotP = FVector::DotProduct(TotalDirections, ClimbingFlingDirs[i]);
 		
 		if (DotP > CurrenttDotP)
 		{
 			CurrenttDotP = DotP;
-			FinalFlingDir = _ClimbingFlingAllowedDirections[i];
+			FinalDirection = ClimbingFlingDirs[i];// GotoLoc;
+			/*FinalGotoLoc = ClimbingGotoLoc;*/
+			
 		}
 	}
+	
+	
 
-	return FinalFlingDir;
+	_FlingJumpGotoLoc = CapLoc + (FinalDirection * _ClimbingFlingMovementDistance);
+	DrawDebugCapsule(GetWorld(), _FlingJumpGotoLoc, _CachedCapsule->GetScaledCapsuleHalfHeight(),
+		_CachedCapsule->GetScaledCapsuleRadius(), _CachedCapsule->GetComponentQuat(), FColor::Green, false, 15.f);
+
+	return FinalDirection;
+}
+
+void UVRPawnComponent::RotateCapsuleToFaceHeadDirection()
+{
+	/* Make capsule face the direction of the movement forward dir (For example the HMD) */
+	FRotator Rot = _CachedCapsule->GetComponentRotation();
+	Rot.Yaw = _CachedCamera->GetComponentRotation().Yaw;
+	_CachedCapsule->SetWorldRotation(Rot);
+}
+
+void UVRPawnComponent::RotateItemStorers(float DeltaTime)
+{
+	if (!_CachedCapsule || !_CachedCamera)
+		return;
+
+	/*FRotator CachedCapRot = _CachedCapsule->GetComponentRotation();
+	FRotator CachedCamRot = _CachedCamera->GetComponentRotation();
+
+	//New Rotation
+	FVector Distance = _CachedVROrigin->GetComponentLocation() - _CachedCamera->GetComponentLocation();
+	FVector Rotation = Distance.RotateAngleAxis(Amount, FVector(0, 0, 1));
+	FVector FinalLocation = _CachedCamera->GetComponentLocation() + Rotation;
+
+	_CachedVROrigin->SetWorldLocation(FinalLocation);
+	_CachedVROrigin->AddRelativeRotation(FRotator(0, Amount, 0));
+
+	//Need to move the cap back to where it was otherwhise it gets stuck in geometry
+	_CachedCapsule->SetWorldLocation(OldCapLoc);*/
+}
+
+void UVRPawnComponent::ClimbingDetectionZoneBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if (UEnvironmentGrabComponent* EGC = Cast<UEnvironmentGrabComponent>(OtherComp))
+	{
+		_ClimbingZones.Add(EGC);
+	}
+}
+
+void UVRPawnComponent::ClimbingDetectionZoneEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	if (UEnvironmentGrabComponent* EGC = Cast<UEnvironmentGrabComponent>(OtherComp))
+	{
+		_ClimbingZones.Remove(EGC);
+	}
 }
 
 void UVRPawnComponent::NetMulticast_SendMove_Implementation(FVector NewLocation)

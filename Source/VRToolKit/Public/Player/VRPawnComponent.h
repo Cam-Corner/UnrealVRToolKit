@@ -9,6 +9,7 @@
 DECLARE_LOG_CATEGORY_EXTERN(LogUVRPawnComponent, Log, All);
 
 class UCapsuleComponent;
+class USphereComponent;
 class UCameraComponent;
 class USceneComponent;
 class APawn;
@@ -77,7 +78,7 @@ public:
 
 	void AddRotationInput(FRotator Rot);
 
-	void SetCachedComponents(UCapsuleComponent* Capsule, UCameraComponent* Camera, USceneComponent* VROrigin);
+	void SetCachedComponents(UCapsuleComponent* Capsule, UCameraComponent* Camera, USceneComponent* VROrigin, USphereComponent* ClimbingDetectionZone);
 
 	void FollowCameraPitchRotation(bool bUsePitch);
 
@@ -89,7 +90,7 @@ public:
 
 	void RecenterHMDClimbing();
 
-	void HandGrabbedClimbingPoint(bool LeftHand, EClimbingMode AttemptedClimbingMode = EClimbingMode::ECM_GrabbedClimbing);
+	void HandGrabbedClimbingPoint(bool LeftHand, FQuat ClimbingHandQuat, EClimbingMode AttemptedClimbingMode = EClimbingMode::ECM_GrabbedClimbing);
 
 	void DoJump();
 
@@ -157,7 +158,21 @@ private:
 
 	void SaveClimbingLocation(float DeltaTime);
 
-	FVector GetClimbingFlingDirection();
+	FVector GetClimbingFlingDirection(bool bLeftHand);
+
+	void RotateCapsuleToFaceHeadDirection();
+
+	void RotateItemStorers(float DeltaTime);
+
+
+	UFUNCTION()
+		void ClimbingDetectionZoneBeginOverlap(UPrimitiveComponent* OverlappedComponent,
+			AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
+			bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION()
+		void ClimbingDetectionZoneEndOverlap(UPrimitiveComponent* OverlappedComponent,
+			AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 private:
 	APawn* _OwningPawn = nullptr;
 
@@ -166,6 +181,8 @@ private:
 	UCameraComponent* _CachedCamera = nullptr;
 
 	USceneComponent* _CachedVROrigin = nullptr;
+
+	USphereComponent* _CachedClimbingDetectionZone = nullptr;
 
 //Variables
 private:
@@ -206,6 +223,14 @@ private:
 	TArray<FVector> _CachedClimbingMoves;
 
 	float _ClimbingSaveLocTimer = 0;
+
+	FQuat _LeftHandClimbingQuat = FQuat(1);
+	FQuat _RightHandClimbingQuat = FQuat(1);
+
+	FVector _LeftHandClimbingLocation = FVector::ZeroVector;
+	FVector _RightHandClimbingLocation = FVector::ZeroVector;
+
+	TArray<UEnvironmentGrabComponent*> _ClimbingZones;
 //server functions
 private:
 	UFUNCTION(Server, Reliable)
@@ -285,11 +310,24 @@ protected:
 
 	//The gravity strength(1 = full gravity) when we fling ourself from climbing
 	UPROPERTY(EditAnywhere, Category = "VRPawnComponent MovementMode: Climbing")
-		float _ClimbingFlingGravityStrength = 0.1f;
+		float _ClimbingFlingGravityStrength = .5f;
+
+	//The gravity strength(1 = full gravity) when we fling ourself from climbing
+	UPROPERTY(EditAnywhere, Category = "VRPawnComponent MovementMode: Climbing")
+		float _ClimbingFlingWaitTimeBeforeFalling = .8f;
 
 	//Max Fling Movementspeed
 	UPROPERTY(EditAnywhere, Category = "VRPawnComponent MovementMode: Climbing")
 		float _ClimbingFlingMovementSpeed = 350.f;
+
+	UPROPERTY(EditAnywhere, Category = "VRPawnComponent MovementMode: Climbing")
+		float _ClimbingFlingMovementDistance = 350.f;
+
+	UPROPERTY(EditAnywhere, Category = "VRPawnComponent MovementMode: Climbing")
+		float _ClimbingRotationSpeed = 25.f;
+
+	UPROPERTY(EditAnywhere, Category = "VRPawnComponent MovementMode: Climbing")
+		float _ClimbingHeightMaxOffset = 35.f;
 
 private:
 	bool _bDoSnapTurning = false;
@@ -301,4 +339,14 @@ private:
 	float _PerchHeight = 5;
 
 	TArray<FVector> _ClimbingFlingAllowedDirections;
+
+	float _CurrentClimbingFlingWaitTime = 0;
+
+	float _CurrentClimbingFlingGravityStrength = 0;
+
+	FVector _FlingJumpGotoLoc = FVector::ZeroVector;
+
+	FVector _ClimbingStartingForwardDir = FVector::ZeroVector;
+	
+	bool _bUseLeftHandQuat = true;
 };

@@ -30,8 +30,6 @@ void UAutoLoadingAction::BeginPlay()
 		NoMode._FireMode = EFireModes::EFM_NoneSelected;
 		_CurrentFireMode = NoMode;
 	}
-
-	
 }
 
 void UAutoLoadingAction::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -114,6 +112,23 @@ void UAutoLoadingAction::SetHandGrabPos(USkeletalMeshComponent* SKMesh)
 	}
 }
 
+void UAutoLoadingAction::HardReload()
+{
+	_bRoundInChamber = true;
+
+	if (_ReloadSystem)
+		_ReloadSystem->HardReload();
+}
+
+void UAutoLoadingAction::SetWeaponGrabbed(bool bGrabbed)
+{
+	Super::SetWeaponGrabbed(bGrabbed);
+
+	if (_SliderGrabComp)
+		_SliderGrabComp->SetGrabEnabled(bGrabbed);
+	
+}
+
 void UAutoLoadingAction::SliderGrabbed(AVRHand* Hand)
 {
 	if (!_GunBase || _bFiring)
@@ -124,7 +139,6 @@ void UAutoLoadingAction::SliderGrabbed(AVRHand* Hand)
 	_RelativeSliderGrabbedLocation += (_GunBase->GetActorRightVector() * (_BoltDistance * (_CurrentBoltMovePercentage / 100)));
 
 	_HandGrabPose->SetVisibility(true);
-
 }
 
 void UAutoLoadingAction::SliderReleased(AVRHand* Hand)
@@ -255,6 +269,8 @@ void UAutoLoadingAction::TriggerPressed()
 	if (_GunBase)
 	{
 		_GunBase->AddRecoilOffset();
+
+
 
 		if (_FireSound)
 			UGameplayStatics::PlaySoundAtLocation(GetWorld(), _FireSound, _GunBase->GetActorLocation());

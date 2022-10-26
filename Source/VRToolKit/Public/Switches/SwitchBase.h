@@ -7,11 +7,12 @@
 #include "Utility/PIDControllers.h"
 #include "SwitchBase.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FSwitchState);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FSwitchEnabled, bool, Enabled);
+
 
 class UStaticMeshComponent;
 class UPhysicsRotationComponent;
-class UVRGrabComponent;
+class UItemGrabComponent;
 class AVRHand;
 
 UCLASS()
@@ -31,6 +32,8 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	UPROPERTY(BlueprintAssignable)
+	FSwitchEnabled _SwitchEnabled;
 protected:
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* _StaticSwitchBaseMesh;
@@ -39,13 +42,15 @@ protected:
 	UStaticMeshComponent* _MovingSwitchPartMesh;
 
 	UPROPERTY(VisibleAnywhere)
-	UVRGrabComponent* _GrabComp;
+	UItemGrabComponent* _GrabComp;
 
 	virtual void HoldingSwitch(float DeltaTime, FVector HandLocation, FQuat HandRotation);
 	virtual void DefaultAction(float DeltaTime);
 	virtual void HitARigidBody(const FHitResult& Hit);
 
 	bool _bHandHoldingSwitch = false;
+
+	void SwitchEnabled(bool bEnabled);
 private:
 	UFUNCTION()
 		void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,

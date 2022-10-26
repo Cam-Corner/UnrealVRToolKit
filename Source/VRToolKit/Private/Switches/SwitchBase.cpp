@@ -4,7 +4,7 @@
 #include "Switches/SwitchBase.h"
 #include "Components/StaticMeshComponent.h"
 #include "ActorComponents/PhysicsRotationComponent.h"
-#include "Items/VRGrabComponent.h"
+#include "Items/ItemGrabComponent.h"
 #include "Player/VRHand.h"
 #include "DrawDebugHelpers.h"
 
@@ -28,7 +28,7 @@ ASwitchBase::ASwitchBase()
 	_MovingSwitchPartMesh->bReplicatePhysicsToAutonomousProxy = false;
 	_MovingSwitchPartMesh->OnComponentHit.AddDynamic(this, &ASwitchBase::OnHit);
 
-	_GrabComp = CreateDefaultSubobject<UVRGrabComponent>("GrabComp");
+	_GrabComp = CreateDefaultSubobject<UItemGrabComponent>("GrabComp");
 	_GrabComp->SetupAttachment(_MovingSwitchPartMesh);
 
 	_GrabComp->_ComponentGrabbed.AddDynamic(this, &ASwitchBase::ComponentGrabbed);
@@ -68,6 +68,11 @@ void ASwitchBase::DefaultAction(float DeltaTime)
 void ASwitchBase::HitARigidBody(const FHitResult& Hit)
 {
 
+}
+
+void ASwitchBase::SwitchEnabled(bool bEnabled)
+{
+	_SwitchEnabled.Broadcast(bEnabled);
 }
 
 void ASwitchBase::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,

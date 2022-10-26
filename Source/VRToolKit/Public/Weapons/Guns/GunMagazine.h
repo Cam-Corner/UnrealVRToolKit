@@ -21,7 +21,6 @@ public:
 	uint8 GetRemainingAmmo() { return _StartingAmmoAmount; }
 	void SetRemainingAmmo(uint8 RemainingAmmo) { _StartingAmmoAmount = RemainingAmmo; }
 
-
 protected:
 	UPROPERTY(EditAnywhere)
 	uint8 _StartingAmmoAmount = 7;

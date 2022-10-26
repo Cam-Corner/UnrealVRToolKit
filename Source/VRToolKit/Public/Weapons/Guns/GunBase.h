@@ -9,6 +9,7 @@
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FTriggerPressed);
 
 class UReloadSystem;
+class UFirearmAction;
 
 USTRUCT(BlueprintType)
 struct FGunTrigger
@@ -56,13 +57,28 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void AddRecoilOffset();
 
+	void AddFirearmActionComponent(UFirearmAction* FirearmAction);
+
 	FTriggerPressed _BottomButtonPressed;
 	FTriggerPressed _TopButtonPressed;
+
 protected:
+	virtual void MainGrabPointGrabbed(AVRHand* Hand) override;
+
+	virtual void MainGrabPointReleased(AVRHand* Hand) override;
+
+protected:	
+	UPROPERTY(EditAnywhere, Category = "Weapon Defaults")
+	bool _bStartReloaded = true;
+
 	UPROPERTY(EditAnywhere, Category = "Trigger", BlueprintReadWrite)
 	FGunTrigger _GunTrigger;
 		//TArray<FGunTrigger> _GunTriggers;
 
+	UPROPERTY()
+	TArray<UFirearmAction*> _FirearmActions;
+
+	UPROPERTY()
 	UReloadSystem* _ReloadSystem;
 
 	UFUNCTION()
@@ -136,4 +152,6 @@ private:
 	UPROPERTY(EditAnywhere, Category = "GunRecoil")
 		float _RecoverTime = .25f;
 
+private:
+	void HardReloadWeapon();
 };

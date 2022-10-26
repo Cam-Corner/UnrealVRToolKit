@@ -17,6 +17,7 @@ public:
 	// Sets default values for this component's properties
 	UEnvironmentGrabComponent();
 
+	FVector GetLocationOnZone(FVector GotoLoc);
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;

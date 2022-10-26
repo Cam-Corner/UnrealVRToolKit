@@ -46,9 +46,18 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "SwitchSettings")
 		float _HoldingSlerpSpeed = 3.f;
 
+	UPROPERTY(EditAnywhere, Category = "SwitchSettings")
+		float _ArchRotationOffsetFromUpVector = 90.f;
+
 	/* Wethere we should update the cached variables every frame, wasted performance on objects that dont move */
 	UPROPERTY(EditAnywhere, Category = "SwitchSettings", DisplayName = "Should Update Cached Variables")
 	bool _bShouldUpdateCachedVariables = false;
+
+	//If false, the switch will be enalbed when its at/near its max angle and then disabled when it isn't,
+	//if true, it will enabled when its at/near its max angle, and then stay enabled even it it stays out this zone, then when its gets near the 
+	//zone again, it will disable.
+	UPROPERTY(EditAnywhere, Category = "SwitchSettings")
+		bool _bIsToggleSwitch = false;
 
 //Simulated Angle Physics
 	UPROPERTY(EditAnywhere, Category = "SwitchSettings")
@@ -81,6 +90,9 @@ protected:
 	int _ShortPointA = 0;
 	int _ShortPointB = 0;
 
+	bool _bCurrentlyEnabled = false;
+
+	bool _bWhereOverAngle = false;
 protected:
 	void DrawDebugArc();
 

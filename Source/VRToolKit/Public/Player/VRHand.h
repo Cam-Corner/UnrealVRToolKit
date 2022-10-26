@@ -42,7 +42,7 @@ public:
 
 	FVector _HandToControllerOffset = FVector::ZeroVector;
 
-	FVector _HandForwardDir = FVector::ZeroVector;
+	FQuat _HandQuat = FQuat(1);
 };
 
 UCLASS()
@@ -114,31 +114,31 @@ protected:
 	FVector3f _FingersEdgeDetectBoxExtent = FVector3f(1.5f, 3, .5f);
 
 	UPROPERTY(EditAnywhere, Category = "VRHand: Dynamic Edge Grab Detection")
-		float _MaxTopAngleGrabbable = 45.f;
+	float _MaxTopAngleGrabbable = 45.f;
 
 	UPROPERTY(EditAnywhere, Category = "VRHand: Dynamic Edge Grab Detection")
-		float _MinSideAngleGrabbable = 45.f;
+	float _MinSideAngleGrabbable = 45.f;
 
 	UPROPERTY(EditAnywhere, Category = "VRHand: Dynamic Edge Grab Detection")
-		float _MaxFloorAngleWeCanVault = 35.f;
+	float _MaxFloorAngleWeCanVault = 35.f;
 
 	UPROPERTY(EditAnywhere, Category = "VRHand: Dynamic Edge Grab Detection")
-		float _HandHeightClimbingGrabOffset = 15.f;
+	float _HandHeightClimbingGrabOffset = 15.f;
 
 	UPROPERTY(EditAnywhere, Category = "VRHand: Dynamic Edge Grab Detection")
-		float _HandToWallClimbingOffset = 1.f;
+	float _HandToWallClimbingOffset = 1.f;
 
 	UPROPERTY(EditAnywhere, Category = "VRHand: Vault Detection")
-		TArray<FVector> _VaultingLineTracesLocations;
+	TArray<FVector> _VaultingLineTracesLocations;
 
 	UPROPERTY(EditAnywhere, Category = "VRHand: Vault Detection")
-		float _VaultingLineTraceLength = 2.f;
+	float _VaultingLineTraceLength = 2.f;
 
 	UPROPERTY(EditAnywhere, Category = "VRHand: Vault Detection")
-		float _MinTraceHitsToAllowVaulting = 0.f;
+	float _MinTraceHitsToAllowVaulting = 0.f;
 
 	UPROPERTY(EditAnywhere, Category = "VRHand: Hand Poses")
-		UAnimationAsset* _DefaultHandPose;
+	UAnimationAsset* _DefaultHandPose;
 
 	UPROPERTY(EditAnywhere, Category = "VRHand: Hand Posses")
 		UAnimationAsset* _EdgeLedgeGrabHandPose;
