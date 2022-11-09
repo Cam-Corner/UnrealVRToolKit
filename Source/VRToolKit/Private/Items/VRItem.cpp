@@ -110,6 +110,10 @@ void AVRItem::MainGrabPointGrabbed(AVRHand* Hand)
 		_RootPrimitiveComponent->SetSimulatePhysics(true);
 		_bInStorer = false;
 	}
+
+
+	ComponentGrabbed(true, Hand->GetIsRightHand());
+
 }
 
 void AVRItem::MainGrabPointReleased(AVRHand* Hand)
@@ -128,6 +132,7 @@ void AVRItem::MainGrabPointReleased(AVRHand* Hand)
 	{
 		_RootPrimitiveComponent->SetSimulatePhysics(false);
 		_bInStorer = true;
+		return;
 	}
 	else if (_ItemStorers.Num() > 0 && _ItemStorers[0])
 	{
@@ -140,9 +145,13 @@ void AVRItem::MainGrabPointReleased(AVRHand* Hand)
 		}
 	}
 
+	_RootPrimitiveComponent->SetSimulatePhysics(true);
 	_PHC->SetPlayerControllerOwner(NULL);
 	SetOwner(NULL);
 	_RootPrimitiveComponent->SetEnableGravity(true);
+
+
+	ComponentGrabbed(false, Hand->GetIsRightHand());
 }
 
 void AVRItem::SetupItemRootComponent()
@@ -172,6 +181,8 @@ void AVRItem::OnItemOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActo
 		return;
 
 	_ItemStorers.Add(ST);
+
+	OverlappedItemStorer(ST);
 }
 
 void AVRItem::OnItemOverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
@@ -183,4 +194,8 @@ void AVRItem::OnItemOverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor*
 	{
 		_ItemStorers.Remove(ST);
 	}
+}
+
+void AVRItem::OverlappedItemStorer(UItemStorer* ItemStorer)
+{
 }

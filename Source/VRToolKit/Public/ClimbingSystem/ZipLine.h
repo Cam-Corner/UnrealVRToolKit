@@ -71,8 +71,8 @@ protected:
 
 	bool _bTriggerPressed;
 
-#if WITH_EDITORONLY_DATA
+//#if WITH_EDITORONLY_DATA
 	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Buttons")
 		void UpdateComponent();
-#endif
+//#endif
 };

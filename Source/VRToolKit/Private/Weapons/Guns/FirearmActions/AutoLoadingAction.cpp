@@ -10,6 +10,7 @@
 #include "Sound/SoundCue.h"
 #include "Kismet/GameplayStatics.h"
 #include "Weapons/Guns/ReloadSystem.h"
+#include "Weapons/HitBoxComponent.h"
 
 UAutoLoadingAction::UAutoLoadingAction()
 {
@@ -38,7 +39,8 @@ void UAutoLoadingAction::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 
 	if (_bSliderGrabbed)
 	{
-		HandleSliderGrabbed(DeltaTime);	}
+		HandleSliderGrabbed(DeltaTime);	
+	}
 	else if (_bFiring)
 	{
 		HandleShooting(DeltaTime);
@@ -114,10 +116,19 @@ void UAutoLoadingAction::SetHandGrabPos(USkeletalMeshComponent* SKMesh)
 
 void UAutoLoadingAction::HardReload()
 {
-	_bRoundInChamber = true;
+	_bRoundInChamber = false;
+	_bFiring = false;
+	_bCanInsertRound = true;
+	_bWasFiring = false;
+	_CurrentBoltMovePercentage = _GunEmptyBoltRestingPerc;
+	_CurrentChargingHandleMovePercentage = _GunEmptyChargingHandleRestingPerc;
+	_bHoldEmptyPos = true;
+	_bCanQuickReleaseSlider = true;
+	UGameplayStatics::PlaySoundAtLocation(GetWorld(), _SliderBackSound, _GunBase->GetActorLocation());
 
 	if (_ReloadSystem)
 		_ReloadSystem->HardReload();
+
 }
 
 void UAutoLoadingAction::SetWeaponGrabbed(bool bGrabbed)
@@ -180,8 +191,7 @@ void UAutoLoadingAction::HandleShooting(float DeltaTime)
 	{
 		_bFiring = false;
 		_CurrentBoltMovePercentage = 100;
-	}
-	
+	}	
 }
 
 void UAutoLoadingAction::HandleSliderGrabbed(float DeltaTime)
@@ -270,7 +280,29 @@ void UAutoLoadingAction::TriggerPressed()
 	{
 		_GunBase->AddRecoilOffset();
 
+		FVector ChamberLoc = _GunBase->GetActorLocation();
+		ChamberLoc += _GunBase->GetActorForwardVector() * _RelativeChamberOffset.Y;
+		ChamberLoc += _GunBase->GetActorRightVector() * _RelativeChamberOffset.X;
+		ChamberLoc += _GunBase->GetActorUpVector() * _RelativeChamberOffset.Z;
 
+		FHitResult Hit;
+		GetWorld()->LineTraceSingleByChannel(Hit, ChamberLoc, ChamberLoc +
+			(_GunBase->GetActorRightVector() * 10000.f), ECollisionChannel::ECC_Pawn);
+
+		if (UHitBoxComponent* HitBox = Cast<UHitBoxComponent>(Hit.GetComponent()))
+		{
+			HitBox->HitBoxHit(25.f);	
+		}
+
+
+		/*if (Hit.bBlockingHit)
+		{
+			DrawDebugLine(GetWorld(), Hit.TraceStart, Hit.Location, FColor::Red, false, 5.f);
+		}
+		else
+		{
+			DrawDebugLine(GetWorld(), Hit.TraceStart, Hit.TraceEnd, FColor::Green, false, 5.f);
+		}*/
 
 		if (_FireSound)
 			UGameplayStatics::PlaySoundAtLocation(GetWorld(), _FireSound, _GunBase->GetActorLocation());
@@ -316,7 +348,7 @@ void UAutoLoadingAction::ChangeFireMode()
 
 void UAutoLoadingAction::HandleBoltPercentages()
 {
-	if (!_ReloadSystem)
+	if (!_ReloadSystem || _bHoldEmptyPos)
 		return;
 
 	float Perc = _CurrentBoltMovePercentage;

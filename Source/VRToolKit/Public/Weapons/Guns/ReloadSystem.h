@@ -43,6 +43,10 @@ public:
 	bool HasBulletsLeft();
 
 	void HardReload();
+
+	UClass* GetMagazineType();
+
+	bool CanReload() { return _bCanReload; }
 private:
 	uint8 _BulletsLeft = 0;
 

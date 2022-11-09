@@ -33,6 +33,7 @@ void UItemGrabComponent::ReleaseComponent(AVRHand* HandGrabbing)
 	_HandHoldingComponent = NULL;
 }
 
+
 void UItemGrabComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);

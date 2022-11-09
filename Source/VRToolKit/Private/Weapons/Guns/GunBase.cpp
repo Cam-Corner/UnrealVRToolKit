@@ -8,6 +8,8 @@
 #include "Player/VRHand.h"
 #include "Components/ActorComponent.h"
 #include "Weapons/Guns/FirearmActions/FirearmAction.h"
+#include "Weapons/Guns/ReloadSystem.h"
+#include "Items/ItemStorer.h"
 
 AGunBase::AGunBase()
 {
@@ -88,6 +90,14 @@ void AGunBase::AddFirearmActionComponent(UFirearmAction* FirearmAction)
 	_FirearmActions.Add(FirearmAction);
 }
 
+UClass* AGunBase::GetItemMagazine()
+{
+	if (_ReloadSystem)
+		return _ReloadSystem->GetMagazineType();
+
+	return nullptr;
+}
+
 void AGunBase::MainGrabPointGrabbed(AVRHand* Hand)
 {
 	Super::MainGrabPointGrabbed(Hand);
@@ -105,6 +115,22 @@ void AGunBase::MainGrabPointReleased(AVRHand* Hand)
 	for (UFirearmAction* FA : _FirearmActions)
 	{
 		FA->SetWeaponGrabbed(false);
+	}
+}
+
+void AGunBase::OverlappedItemStorer(UItemStorer* ItemStorer)
+{
+	Super::OverlappedItemStorer(ItemStorer);
+
+	if (!_bCanHardReloadFromItemStorer)
+		return;
+
+	if (_ReloadSystem && _ReloadSystem->CanReload())
+	{
+		if (ItemStorer->GetItemStored() == this)
+		{
+			HardReloadWeapon();
+		}
 	}
 }
 

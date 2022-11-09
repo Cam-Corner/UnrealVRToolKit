@@ -125,6 +125,9 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "AutoLoadingActionSettings")
 		float _GrabSlideLerpSpeed = .25f;
 
+	UPROPERTY(EditAnywhere, Category = "AutoLoadingActionSettings")
+		FVector _RelativeChamberOffset = FVector::ZeroVector;
+
 	//Bolt Settings
 	UPROPERTY(EditAnywhere, Category = "BoltSettings")
 	FName _BoltBoneName = "b_gun_bolt";

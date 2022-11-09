@@ -23,8 +23,8 @@ UPhysicsHandlerComponent::UPhysicsHandlerComponent()
 
 	//_LocPD._Frequency = 6.0f;
 	//_LocPD._Dampening = 1.0f;
-	_RotPD._Frequency = 6.0f;
-	_RotPD._Dampening = 1.0;
+	//_RotPD._Frequency = 6.0f;
+	//_RotPD._Dampening = 1.0;
 
 	_TargetRotationOffset = FQuat(FRotator(0, 0, 0));
 

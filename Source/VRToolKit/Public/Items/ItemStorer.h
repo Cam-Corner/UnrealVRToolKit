@@ -24,6 +24,7 @@ public:
 
 	bool ItemSizeAllowed(EItemSize SizeAllowed);
 
+	AVRItem* GetItemStored() { return _ItemStored; }
 private:
 	AVRItem* _ItemStored;
 

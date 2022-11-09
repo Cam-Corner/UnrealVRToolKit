@@ -11,8 +11,7 @@ class UItemGrabComponent;
 class AVRHand;
 class UStaticMeshComponent;
 class UPhysicsHandlerComponent;
-
-
+class UItemStorer;
 UENUM()
 enum EItemSize
 {
@@ -25,8 +24,8 @@ UCLASS()
 class VRTOOLKIT_API AVRItem : public AActor
 {
 	GENERATED_BODY()
-	
-public:	
+
+public:
 	// Sets default values for this actor's properties
 	AVRItem();
 
@@ -34,13 +33,17 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-public:	
+public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
 	void ForceDrop(bool bDestroyAfter = false);
 
 	bool IsBeingHeld();
+
+	virtual UClass* GetItemMagazine() { return NULL; }
+
+	UItemGrabComponent* GetGrabPoint() { return _MainGrabComponent; }
 protected:
 	UFUNCTION()
 	virtual void MainGrabPointGrabbed(AVRHand* Hand);
@@ -70,15 +73,19 @@ protected:
 		void OnItemOverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 			UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
+	UFUNCTION(BlueprintImplementableEvent)
+		void ComponentGrabbed(bool bGrabbed, bool bRightHand);
+
+	virtual void OverlappedItemStorer(UItemStorer* ItemStorer);
 protected:
 	UPROPERTY(EditAnywhere);
 	UPhysicsHandlerComponent* _PHC;
 
 	UPROPERTY()
-	class UItemStorer* _StoredIn = NULL;
+	UItemStorer* _StoredIn = NULL;
 
 	UPROPERTY()
-	TArray<class UItemStorer*> _ItemStorers;
+	TArray<UItemStorer*> _ItemStorers;
 
 	UPROPERTY(EditAnywhere, Category = "Item Defaults")
 	TEnumAsByte<EItemSize> _ItemSize;

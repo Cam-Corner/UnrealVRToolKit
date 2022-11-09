@@ -29,7 +29,7 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 protected:
-#if WITH_EDITORONLY_DATA
+//#if WITH_EDITORONLY_DATA
 	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Buttons")
 	void SelectNextPoint();
 
@@ -41,7 +41,7 @@ protected:
 
 	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Buttons")
 	void RemovePoint();
-#endif
+//#endif
 
 	void ReconstructClimbingZone();
 
@@ -60,7 +60,7 @@ private:
 	
 	uint8 _SelectedPointIndex = 0;
 
-#if WITH_EDITORONLY_DATA
+//#if WITH_EDITORONLY_DATA
 	UPROPERTY()
 	TArray<class UStaticMeshComponent*> _TempPoints;
 
@@ -71,7 +71,7 @@ private:
 	class UMaterial* _ClimbShowMat;
 	class UMaterial* _ClimbPointMat;
 	class UMaterial* _ClimbPointSelectedMat;
-#endif
+//#endif
 
 	void CreatePointComponent();
 	void CreateClimbingZoneComponent(FVector Location, FRotator Rotation, FVector BoxExtent);

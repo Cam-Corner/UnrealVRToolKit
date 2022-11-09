@@ -62,11 +62,13 @@ public:
 	FTriggerPressed _BottomButtonPressed;
 	FTriggerPressed _TopButtonPressed;
 
+	virtual UClass* GetItemMagazine() override;
 protected:
 	virtual void MainGrabPointGrabbed(AVRHand* Hand) override;
 
 	virtual void MainGrabPointReleased(AVRHand* Hand) override;
 
+	virtual void OverlappedItemStorer(UItemStorer* ItemStorer) override;
 protected:	
 	UPROPERTY(EditAnywhere, Category = "Weapon Defaults")
 	bool _bStartReloaded = true;
@@ -116,6 +118,9 @@ protected:
 	float _bCanRecoverHorizontalRecoil = false;
 	float _bCanRecoverKickBackRecoil = false;
 private:
+	UPROPERTY(EditAnywhere, Category = "Default Gun Settings")
+		bool _bCanHardReloadFromItemStorer = false;
+
 	UPROPERTY(EditAnywhere, Category = "GunRecoil")
 		bool _bRandomHorizontalRecoil = true;
 

@@ -17,6 +17,8 @@
 #include "MotionControllerComponent.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "Components/SphereComponent.h"
+#include "Items/ItemStorer.h"
+#include "Weapons/AmmoStorageComponent.h"
 
 #define LEVEL_NETWORKTEST TEXT("/Game/Content/Levels/TestLevels/LVL_NetworkTest");
 #define GameMode_MP_Default TEXT("?listen?game=Default");
@@ -93,12 +95,21 @@ AVRCharacter::AVRCharacter()
 	_RightHandMCComp->SetupAttachment(_RightHandRoot);
 	_RightHandMCComp->MotionSource = "Right";
 
-	//ClimbingZone
-	_ClimbingZoneDetection = CreateDefaultSubobject<USphereComponent>("ClimbingDetectionZone");
-	_ClimbingZoneDetection->SetupAttachment(_CharacterCap);
-	_ClimbingZoneDetection->SetSphereRadius(75.f);
-	_ClimbingZoneDetection->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Overlap);
-	_ClimbingZoneDetection->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	//Setup item storers
+	_StorageRootComp = CreateDefaultSubobject<USceneComponent>("StoererRootComp");
+	_StorageRootComp->SetupAttachment(_CharacterRoot);
+
+	_AmmoStorageComp = CreateDefaultSubobject<UAmmoStorageComponent>("AmmoStorageComp");
+	_AmmoStorageComp->SetupAttachment(_StorageRootComp);
+
+	_LeftHipStorageComp = CreateDefaultSubobject<UItemStorer>("LeftHipStorageComp");
+	_LeftHipStorageComp->SetupAttachment(_StorageRootComp);
+
+	_RightHipStorageComp = CreateDefaultSubobject<UItemStorer>("RightHipStorageComp");
+	_RightHipStorageComp->SetupAttachment(_StorageRootComp);
+
+	_BackStorageComp = CreateDefaultSubobject<UItemStorer>("BackStorageComp");
+	_BackStorageComp->SetupAttachment(_StorageRootComp);
 }
 
 // Called when the game starts or when spawned
@@ -108,7 +119,7 @@ void AVRCharacter::BeginPlay()
 	
 	if (_VRPawnComp)
 	{
-		_VRPawnComp->SetCachedComponents(_CharacterCap, _CharacterCam, _CharacterRoot, _ClimbingZoneDetection);
+		_VRPawnComp->SetCachedComponents(_CharacterCap, _CharacterCam, _CharacterRoot);
 	}
 
 	if (IsLocallyControlled() && _HMDMesh)
@@ -433,7 +444,7 @@ void AVRCharacter::AddRotationInput(FRotator Rotation)
 
 void AVRCharacter::SpawnHands()
 {
-	if (!_BP_DefaultHand)
+	if (!_BP_DefaultLeftHand || !_BP_DefaultRightHand)
 		return;
 
 	FActorSpawnParameters SpawnInfo;
@@ -444,7 +455,7 @@ void AVRCharacter::SpawnHands()
 
 	if (!_LeftHand)
 	{
-		_LeftHand = GetWorld()->SpawnActor<AVRHand>(_BP_DefaultHand, GetActorLocation(), GetActorRotation(), SpawnInfo);
+		_LeftHand = GetWorld()->SpawnActor<AVRHand>(_BP_DefaultLeftHand, GetActorLocation(), GetActorRotation(), SpawnInfo);
 		//_LeftHand->AttachToComponent(GetRootComponent(), HandRule);
 		_LeftHand->IsRightHand(false, _LeftHandMCComp);
 		_LeftHand->SetCharacterAttachedTo(this);
@@ -455,7 +466,7 @@ void AVRCharacter::SpawnHands()
 
 	if (!_RightHand)
 	{
-		_RightHand = GetWorld()->SpawnActor<AVRHand>(_BP_DefaultHand, GetActorLocation(), GetActorRotation(), SpawnInfo);
+		_RightHand = GetWorld()->SpawnActor<AVRHand>(_BP_DefaultRightHand, GetActorLocation(), GetActorRotation(), SpawnInfo);
 		//_RightHand->AttachToComponent(GetRootComponent(), HandRule);
 		_RightHand->IsRightHand(true, _RightHandMCComp);
 		_RightHand->SetCharacterAttachedTo(this);
@@ -463,6 +474,9 @@ void AVRCharacter::SpawnHands()
 		if (!UsingHMD)
 			_RightHand->NonVRFollow(_RightHandRoot);
 	}
+
+	if (_AmmoStorageComp)
+		_AmmoStorageComp->SetHands(_LeftHand, _RightHand);
 }
 
 void AVRCharacter::VRBodyTick(float DeltaTime)

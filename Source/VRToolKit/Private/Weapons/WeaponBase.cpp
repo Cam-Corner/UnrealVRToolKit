@@ -58,6 +58,15 @@ void AWeaponBase::MainGrabPointGrabbed(AVRHand* Hand)
 	if (_HandGrabPose)
 		_HandGrabPose->SetVisibility(true);
 
+
+	if (Hand->GetIsRightHand())
+	{
+		_HandGrabPose->SetWorldScale3D(FVector(1, 1, 1));
+	}
+	else 
+	{
+		_HandGrabPose->SetWorldScale3D(FVector(1, -1, 1));
+	}
 }
 
 void AWeaponBase::MainGrabPointReleased(AVRHand* Hand)
@@ -66,5 +75,6 @@ void AWeaponBase::MainGrabPointReleased(AVRHand* Hand)
 
 	if (_HandGrabPose)
 		_HandGrabPose->SetVisibility(false);
+
 }
 

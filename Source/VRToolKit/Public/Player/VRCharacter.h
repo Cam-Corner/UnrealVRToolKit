@@ -19,6 +19,8 @@ class UMotionControllerComponent;
 struct FClimbingHandInfo;
 enum EClimbingMode;
 class USphereComponent;
+class UAmmoStorageComponent;
+class UItemStorer;
 
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class VRTOOLKIT_API AVRCharacter : public APawn
@@ -123,13 +125,13 @@ private:
 	float _ReplicatedHMDTransformTimer = 0.25f;
 
 	UPROPERTY(EditAnywhere, Category = "ThingsToSpawn")
-		TSubclassOf<AVRHand> _BP_DefaultHand;
+		TSubclassOf<AVRHand> _BP_DefaultLeftHand;
+
+	UPROPERTY(EditAnywhere, Category = "ThingsToSpawn")
+		TSubclassOf<AVRHand> _BP_DefaultRightHand;
 
 	AVRHand* _LeftHand = NULL;
 	AVRHand* _RightHand = NULL;
-
-	UPROPERTY(VisibleAnywhere)
-	USphereComponent* _ClimbingZoneDetection;
 
 	bool _LeftHandGrabbedEGB = false;
 	bool _RightHandGrabbedEGB = false;
@@ -144,6 +146,8 @@ protected:
 	UFUNCTION(BlueprintCallable)
 		FTransform GetVRCameraTransorm();
 
+
+
 //RPC Functions
 protected:
 	UFUNCTION(Server, UnReliable)
@@ -157,9 +161,25 @@ protected:
 
 	UFUNCTION(NetMulticast, Reliable)
 		void NetMulticast_SetNewOwner(AController* NewController);
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+		UCapsuleComponent* _CharacterCap;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	USceneComponent* _StorageRootComp;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	UAmmoStorageComponent* _AmmoStorageComp;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	UItemStorer* _LeftHipStorageComp;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	UItemStorer* _RightHipStorageComp;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	UItemStorer* _BackStorageComp;
 private:
-	UPROPERTY(VisibleAnywhere)
-	UCapsuleComponent* _CharacterCap;
 
 	UPROPERTY(VisibleAnywhere)
 	UCameraComponent* _CharacterCam;

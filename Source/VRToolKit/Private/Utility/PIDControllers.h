@@ -123,8 +123,8 @@ public:
 	*/
 	FVector GetTorque(float DeltaTime, FQuat CQuat, FQuat DQuat, FVector AVel, FVector InertiaTensor, FTransform ActorTransform)
 	{
-		float PGain = (6.f * _Frequency) * (6.f * _Frequency) * 0.25f;
-		float DGain = 4.5f * _Frequency * _Dampening;
+		float PGain = _PGain;// (6.f * _Frequency)* (6.f * _Frequency) * 0.25f;
+		float DGain = _DGain;// 4.5f * _Frequency * _Dampening;
 
 		FVector Axis = FVector::ZeroVector;
 		float Angle = 0;
@@ -161,20 +161,19 @@ public:
 			Value *= InertiaTensor;
 			Value = RotInertia2World * Value;*/
 		}
-		return Value;
+		return Value * _Power;
 	}
 
 	/**How fast it takes to reach the target */
 	UPROPERTY(EditAnywhere, Category = "Tuning ")
-		float _Frequency = 1.0f;
+		float _PGain = .8f;
 
-	/*
-	* Value = 1: Critically Damped
-	* Value < 1: Under Damped and will oscillate depending on how low the value is
-	* Value > 1: Over Damped and will be slow to reach the target
-	*/
+	/** Changes how much it slows down towards the desired value */
 	UPROPERTY(EditAnywhere, Category = "Tuning ")
-		float _Dampening = 1.0f;
+		float _DGain = .2f;
+
+	UPROPERTY(EditAnywhere, Category = "Tuning ")
+		float _Power = 1;
 };
 
 USTRUCT(BlueprintType)
@@ -204,6 +203,8 @@ public:
 	/** Changes how much it slows down towards the desired value */
 	UPROPERTY(EditAnywhere, Category = "Tuning ")
 		float _Dampening = 1.0f;
+
+
 };
 
 USTRUCT(BlueprintType)
@@ -280,6 +281,4 @@ private:
 	bool _bInitialzied = false;
 
 	FVector _IStored = FVector::ZeroVector;
-
-	
 };

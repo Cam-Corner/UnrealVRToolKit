@@ -23,6 +23,9 @@ class UEnvironmentGrabComponent;
 class AVRCharacter;
 class UBoxComponent;
 class UAnimationAsset;
+class UAmmoStorageComponent;
+class USoundCue;
+class UItemStorer;
 
 USTRUCT()
 struct FClimbingHandInfo
@@ -100,6 +103,8 @@ public:
 	UPrimitiveComponent* GetHandCollision() { return _ControllerSKM; }
 
 	void NonVRFollow(class USceneComponent* CompToFollow);
+
+	AVRItem* GetHoldingItem();
 protected:
 	UPROPERTY(EditAnywhere, Category = "VRHand: Dynamic Edge Grab Detection")
 	FVector3f _ParmEdgeDetectBoxExtent = FVector3f(0.5f, 5, 4.f);
@@ -137,18 +142,17 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "VRHand: Vault Detection")
 	float _MinTraceHitsToAllowVaulting = 0.f;
 
-	UPROPERTY(EditAnywhere, Category = "VRHand: Hand Poses")
+	UPROPERTY(EditAnywhere, Category = "VRHand: Left Hand Poses")
 	UAnimationAsset* _DefaultHandPose;
 
-	UPROPERTY(EditAnywhere, Category = "VRHand: Hand Posses")
-		UAnimationAsset* _EdgeLedgeGrabHandPose;
+	UPROPERTY(EditAnywhere, Category = "VRHand: Left Hand Poses")
+	UAnimationAsset* _EdgeLedgeGrabHandPose;
 
-	UPROPERTY(EditAnywhere, Category = "VRHand: Hand Posses")
-		UAnimationAsset* _OtherClimbingGrabHandPose;
+	UPROPERTY(EditAnywhere, Category = "VRHand: Left Hand Poses")
+	UAnimationAsset* _VaultingHandPose;
 
-	UPROPERTY(EditAnywhere, Category = "VRHand: Hand Posses")
-		UAnimationAsset* _VaultingHandPose;
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
+		USoundCue* _SC_HandGrabbedClimbable;
 private:
 	AVRCharacter* _CharacterAttachedTo;
 
@@ -171,6 +175,7 @@ private:
 
 	UPROPERTY(Replicated)
 	FRotator _LastKNownTrackingHandRotation = FRotator::ZeroRotator;
+
 
 	float _ReplicatedHandTransformTimer = 0.25f;
 
@@ -211,6 +216,10 @@ private:
 	TArray<UItemGrabComponent*> _GrabCompArray;
 
 	TArray<UEnvironmentGrabComponent*> _EnvironmentGrabCompArray;
+
+	TArray<UAmmoStorageComponent*> _AmmoStorageCompArray;
+
+	TArray<UItemStorer*> _ItemStorers;
 
 	UEnvironmentGrabComponent* _GrabbedEGC;
 

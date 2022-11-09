@@ -34,7 +34,7 @@ AClimbingZone::AClimbingZone()
 	_GrabComp->SetupAttachment(_RootComp);
 	_GrabComp->bHiddenInGame = false;*/
 
-#if WITH_EDITORONLY_DATA
+//#if WITH_EDITORONLY_DATA
 	static ConstructorHelpers::FObjectFinder<UMaterial> MatClimb(TEXT("/VRToolKit/DontDelete/DebugMaterials/m_ClimbingBox"));
 	if (MatClimb.Succeeded())
 	{
@@ -58,7 +58,7 @@ AClimbingZone::AClimbingZone()
 	{
 		_MeshToUse = Mesh.Object;
 	}
-#endif
+//#endif
 }
 
 // Called when the game starts or when spawned
@@ -78,8 +78,8 @@ void AClimbingZone::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-#if WITH_EDITORONLY_DATA
-	if (GetWorld() && GetWorld()->WorldType == EWorldType::Editor && IsSelectedInEditor())
+//#if WITH_EDITORONLY_DATA
+	/*if (GetWorld() && GetWorld()->WorldType == EWorldType::Editor && IsSelectedInEditor())
 	{
 		bool bChange = false;
 		for (int i = 0; i < _TempPoints.Num(); i++)
@@ -109,10 +109,11 @@ void AClimbingZone::Tick(float DeltaTime)
 			 
 			ReconstructClimbingZone();
 		}		
-	}
-#endif
+	}*/
+//#endif
 }
-#if WITH_EDITORONLY_DATA
+
+//#if WITH_EDITORONLY_DATA
 
 void AClimbingZone::SelectNextPoint()
 {
@@ -153,7 +154,7 @@ void AClimbingZone::RemovePoint()
 	_TempPoints.RemoveAt(_SelectedPointIndex);
 	SelectNextPoint();
 }
-#endif
+//#endif
 
 void AClimbingZone::ReconstructClimbingZone()
 {
@@ -282,7 +283,7 @@ void AClimbingZone::CreateClimbingZoneComponent(FVector Location, FRotator Rotat
 
 	_GrabPoints.Add(NewComp);
 
-#if WITH_EDITORONLY_DATA
+//#if WITH_EDITORONLY_DATA
 	FVector Size = BoxExtent / 50;
 
 	UStaticMeshComponent* NewMeshComp = NewObject<UStaticMeshComponent>(this);
@@ -300,6 +301,6 @@ void AClimbingZone::CreateClimbingZoneComponent(FVector Location, FRotator Rotat
 	NewMeshComp->SetWorldRotation(Rotation);
 
 	_VisibleClimbMesh.Add(NewMeshComp);
-#endif
+//#endif
 }
 

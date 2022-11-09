@@ -13,6 +13,28 @@ class USphereComponent;
 class UCameraComponent;
 class USceneComponent;
 class APawn;
+class USoundCue;
+
+USTRUCT(BlueprintType)
+struct FSmoothJumpParams
+{
+	GENERATED_BODY()
+
+public:
+	bool _bUseSmoothJump = false;
+
+	FVector _JumpStartLocation = FVector::ZeroVector;
+	FVector _JumpEndLocation = FVector::ZeroVector;
+	FVector _JumpDirection = FVector::ZeroVector;
+
+	float _JumpDistance = 0;
+	float _MaxSpeedOfJump = 0;
+	float _MinPercentageOfSpeed = 20;
+
+	bool _bKeepJumpSpeed = true;
+	bool _bArcJump = false;
+
+};
 
 UENUM(BlueprintType)
 enum EMovementModes
@@ -78,7 +100,7 @@ public:
 
 	void AddRotationInput(FRotator Rot);
 
-	void SetCachedComponents(UCapsuleComponent* Capsule, UCameraComponent* Camera, USceneComponent* VROrigin, USphereComponent* ClimbingDetectionZone);
+	void SetCachedComponents(UCapsuleComponent* Capsule, UCameraComponent* Camera, USceneComponent* VROrigin);
 
 	void FollowCameraPitchRotation(bool bUsePitch);
 
@@ -160,19 +182,13 @@ private:
 
 	FVector GetClimbingFlingDirection(bool bLeftHand);
 
+	void WorkOutClimbingFlingJumpParams();
+
 	void RotateCapsuleToFaceHeadDirection();
 
 	void RotateItemStorers(float DeltaTime);
 
-
-	UFUNCTION()
-		void ClimbingDetectionZoneBeginOverlap(UPrimitiveComponent* OverlappedComponent,
-			AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
-			bool bFromSweep, const FHitResult& SweepResult);
-
-	UFUNCTION()
-		void ClimbingDetectionZoneEndOverlap(UPrimitiveComponent* OverlappedComponent,
-			AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+	FVector SmoothJumpToLocation(float DeltaTime, FSmoothJumpParams& JumpParams);
 private:
 	APawn* _OwningPawn = nullptr;
 
@@ -230,7 +246,7 @@ private:
 	FVector _LeftHandClimbingLocation = FVector::ZeroVector;
 	FVector _RightHandClimbingLocation = FVector::ZeroVector;
 
-	TArray<UEnvironmentGrabComponent*> _ClimbingZones;
+	FSmoothJumpParams _CurrentSmoothJumpParams;
 //server functions
 private:
 	UFUNCTION(Server, Reliable)
@@ -324,10 +340,10 @@ protected:
 		float _ClimbingFlingMovementDistance = 350.f;
 
 	UPROPERTY(EditAnywhere, Category = "VRPawnComponent MovementMode: Climbing")
-		float _ClimbingRotationSpeed = 25.f;
+		float _MinClimbingMovementSpeedPercentage = 35.f;
 
-	UPROPERTY(EditAnywhere, Category = "VRPawnComponent MovementMode: Climbing")
-		float _ClimbingHeightMaxOffset = 35.f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VRPawnComponent MovementMode: Audio")
+	USoundCue* _SC_Footstep;
 
 private:
 	bool _bDoSnapTurning = false;
@@ -342,11 +358,15 @@ private:
 
 	float _CurrentClimbingFlingWaitTime = 0;
 
-	float _CurrentClimbingFlingGravityStrength = 0;
+	float _CurrentClimbingFlingGravityStrength = 1;
 
 	FVector _FlingJumpGotoLoc = FVector::ZeroVector;
 
 	FVector _ClimbingStartingForwardDir = FVector::ZeroVector;
 	
 	bool _bUseLeftHandQuat = true;
+
+	FVector _VelocityPerFrame = FVector::ZeroVector;
+
+	float _FootstepTimer = .5f;
 };

@@ -21,6 +21,9 @@
 #include "Utility/ExtraMaths.h"
 #include "Components/BoxComponent.h"
 #include "Player/VRPawnComponent.h"
+#include "Weapons/AmmoStorageComponent.h"
+#include "Sound/SoundCue.h"
+#include "Items/ItemStorer.h"
 
 // Sets default values
 AVRHand::AVRHand()
@@ -153,7 +156,7 @@ void AVRHand::Tick(float DeltaTime)
 				FinalOffset += HandRot.GetRightVector() * _HandOffset.Y;
 				FinalOffset += HandRot.GetUpVector() * _HandOffset.Z;
 
-				VerticalOffset = FQuat(FRotator(135, 0, 0));
+				VerticalOffset = FQuat(FRotator(0, 0, 180));
 
 				if (_bRightHand)
 					VerticalOffset = FQuat(FRotator(135, 0, 180));
@@ -481,15 +484,18 @@ void AVRHand::ChangeClimbingMode(EClimbingMode AttemptedClimbingMode)
 		_PHC->SetTargetType(ETargetType::ETT_SetObject);
 		_ControllerSKM->SetAnimation(_DefaultHandPose);
 		_ControllerSKM->SetSimulatePhysics(true);
+		UGameplayStatics::PlaySoundAtLocation(GetWorld(), _SC_HandGrabbedClimbable, _ControllerSKM->GetComponentLocation());
 		break;
 	case EClimbingMode::ECM_GrabbedClimbing:
 		_PHC->SetTargetType(ETargetType::ETT_SetLocationAndRotation);
 		_ControllerSKM->SetAnimation(_EdgeLedgeGrabHandPose);
+		UGameplayStatics::PlaySoundAtLocation(GetWorld(), _SC_HandGrabbedClimbable, GetActorLocation());
 		_ControllerSKM->SetSimulatePhysics(false);
 		break;
 	case EClimbingMode::ECM_Vaulting:
 		_PHC->SetTargetType(ETargetType::ETT_SetLocationAndRotation);
 		_ControllerSKM->SetAnimation(_VaultingHandPose);
+		UGameplayStatics::PlaySoundAtLocation(GetWorld(), _SC_HandGrabbedClimbable, GetActorLocation());
 		_ControllerSKM->SetSimulatePhysics(false);
 		break;
 	default:
@@ -499,13 +505,63 @@ void AVRHand::ChangeClimbingMode(EClimbingMode AttemptedClimbingMode)
 	_ClimbingInfo._GrabbedLocation = GetActorLocation();//_MotionControllerComp->GetComponentLocation();
 	_ClimbingInfo._HandQuat = GetActorQuat();
 	_CharacterAttachedTo->HandGrabbedClimbingPoint(!GetIsRightHand(), GetActorQuat(), AttemptedClimbingMode);
+
 }
 
 void AVRHand::GripPressCheck()
 {
-	if (_GrabCompArray.Num() > 0)
+	if (_ItemStorers.Num() > 0)
+	{
+		if (AVRItem* Item = _ItemStorers[0]->GetItemStored())
+		{
+			if (UItemGrabComponent* GrabComp = Item->GetGrabPoint())
+			{
+				if (GrabComp->GrabComponent(this))
+				{
+					_ComponentHeld = GrabComp;
+					_ControllerSKM->SetSimulatePhysics(false);
+					_ControllerSKM->SetVisibility(false);
+				}
+			}
+		}
+	}
+	else if (_GrabCompArray.Num() > 0)
 	{
 		AttemptItemGrab();
+	}
+	else if (_AmmoStorageCompArray.Num() > 0)
+	{
+		if (AVRItem* Mag = _AmmoStorageCompArray[0]->GetMagazine(this))
+		{
+			UItemGrabComponent* GrabComp = Mag->GetGrabPoint();
+
+			if (GrabComp)
+			{
+				if (GrabComp->GrabComponent(this))
+				{				
+					_ComponentHeld = GrabComp;
+					_ControllerSKM->SetSimulatePhysics(false);
+					//_ControllerSKM->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+					_ControllerSKM->SetVisibility(false);
+
+					/*if (GetLocalRole() < ENetRole::ROLE_Authority)
+						Server_GrabbedComponent(_ComponentHeld);*/
+				}
+				else
+				{
+					GEngine->AddOnScreenDebugMessage(756, 10.f, FColor::Green, "AmmoGrab: GrabPoint UnSuccessful");
+				}
+			}
+			else
+			{
+				GEngine->AddOnScreenDebugMessage(756, 10.f, FColor::Green, "AmmoGrab: GrabPoint NULL");
+			}
+		}
+		else
+		{
+			GEngine->AddOnScreenDebugMessage(756, 10.f, FColor::Green, "AmmoGrab: couldnt spawn Mag");
+
+		}
 	}
 	else if (_EnvironmentGrabCompArray.Num() > 0)
 	{
@@ -558,6 +614,15 @@ void AVRHand::GrabSphereOverlapBegin(UPrimitiveComponent* OverlappedComponent, A
 	{
 		_EnvironmentGrabCompArray.Add(EGC);
 	}
+	else if (UAmmoStorageComponent* ASC = Cast<UAmmoStorageComponent>(OtherComp))
+	{
+		_AmmoStorageCompArray.Add(ASC);
+		_ItemStorers;
+	}
+	else if (UItemStorer* IS = Cast<UItemStorer>(OtherComp))
+	{
+		_ItemStorers.Add(IS);
+	}
 }
 
 void AVRHand::GrabSphereOverlapEnd(	UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, 
@@ -570,6 +635,14 @@ void AVRHand::GrabSphereOverlapEnd(	UPrimitiveComponent* OverlappedComponent, AA
 	else if (UEnvironmentGrabComponent* EGC = Cast<UEnvironmentGrabComponent>(OtherComp))
 	{
 		_EnvironmentGrabCompArray.Remove(EGC);
+	}
+	else if (UAmmoStorageComponent* ASC = Cast<UAmmoStorageComponent>(OtherComp))
+	{
+		_AmmoStorageCompArray.Remove(ASC);
+	}
+	else if (UItemStorer* IS = Cast<UItemStorer>(OtherComp))
+	{
+		_ItemStorers.Remove(IS);
 	}
 }
 
@@ -603,17 +676,6 @@ void AVRHand::IsRightHand(bool bRightHand, UMotionControllerComponent* Controlle
 
 	if (!_ControllerSKM || !_MotionControllerComp)
 		return;
-
-	if (bRightHand)
-	{
-		_ControllerSKM->SetRelativeScale3D(FVector(1.f, 1.f, 1.f));
-		//_MotionControllerComp->MotionSource = "Right";
-	}
-	else
-	{		
-		_ControllerSKM->SetRelativeScale3D(FVector(1.f, -1.f, 1.f));
-		//_MotionControllerComp->MotionSource = "Left";
-	}
 
 	_PHC->SetReplicatedPhysicsObject(_ControllerSKM);
 	_PHC->SetMatchTargetAuthorityType(EAuthorityType::EAT_Client);
@@ -672,47 +734,27 @@ void AVRHand::GripReleased()
 
 	if (_ComponentHeld)
 	{
+		SetActorLocation(_ComponentHeld->GetComponentLocation(), false, nullptr, ETeleportType::ResetPhysics);
 		_ComponentHeld->ReleaseComponent(this);
 		_ComponentHeld = NULL;
-
 		_ControllerSKM->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 		MoveHandOutsideOfHeldObject();
 		_ControllerSKM->SetSimulatePhysics(true);
 		_ControllerSKM->SetVisibility(true);
-
-		Server_DroppedGrabbedComponent();		
+		Server_DroppedGrabbedComponent();	
 	}
 
 	if (_GrabbedEGC)
 	{
 		_GrabbedEGC->ReleaseComponent(this);	
 		ChangeClimbingMode(EClimbingMode::ECM_None);
+
 	}
 
 	if (_DynamicGrabbed_ActorGrabbed || _Vaulting_Actor)
 	{
 		ChangeClimbingMode(EClimbingMode::ECM_None);
 	}
-
-	/*if (_bRightHand)
-	{
-		if (_RightPhysicsHandSM)
-		{
-			_RightPhysicsHandSM->SetVisibility(true);
-		}
-	}
-	else
-	{
-		if (_LeftPhysicsHandSM)
-		{
-			_PhysicsHandSM = _LeftPhysicsHandSM;
-			_LeftPhysicsHandSM->SetVisibility(true);
-		}
-	}
-
-	if (_ControllerSM)
-		_ControllerSM->SetVisibility(false);*/
-
 }
 
 void AVRHand::TopButtonPressed(bool bPressed)
@@ -804,6 +846,19 @@ void AVRHand::NonVRFollow(USceneComponent* CompToFollow)
 	}
 }
 
+AVRItem* AVRHand::GetHoldingItem()
+{
+	if(!_ComponentHeld)
+		return nullptr;
+
+	if (AVRItem* Item = Cast<AVRItem>(_ComponentHeld->GetAttachmentRootActor()))
+	{
+		return Item;
+	}
+
+	return nullptr;
+}
+
 void AVRHand::Client_ItemPickupInvalid_Implementation()
 {
 	GripReleased();
@@ -838,7 +893,7 @@ void AVRHand::Server_DroppedGrabbedComponent_Implementation()
 		//Client_ItemPickupInvalid();
 		return;
 	}
-
+	
 	_ComponentHeld->ReleaseComponent(this);
 	_ComponentHeld = NULL;
 }
@@ -856,11 +911,11 @@ void AVRHand::AttemptItemGrab()
 		{
 			_ComponentHeld = GrabComp;
 			_ControllerSKM->SetSimulatePhysics(false);
-			_ControllerSKM->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			//_ControllerSKM->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 			_ControllerSKM->SetVisibility(false);
 
-			if(GetLocalRole() < ENetRole::ROLE_Authority)
-				Server_GrabbedComponent(_ComponentHeld);
+			/*if(GetLocalRole() < ENetRole::ROLE_Authority)
+				Server_GrabbedComponent(_ComponentHeld);*/
 		}
 	}
 }

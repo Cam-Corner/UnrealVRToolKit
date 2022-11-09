@@ -25,6 +25,8 @@ public:
 	virtual void ReleaseComponent(AVRHand* HandGrabbing) override;
 
 	AVRHand* GetHand() { return _HandHoldingComponent; }
+
+
 private:
 	UPROPERTY(Replicated)
 		bool _bGrabEnabled = true;
