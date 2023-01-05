@@ -102,18 +102,20 @@ void AVRHand::BeginPlay()
 {
 	Super::BeginPlay();
 
-	/*if (GetOwner() != UGameplayStatics::GetPlayerController(GetWorld(), 0))
-	{
-		//_ControllerSM->SetVisibility(false);
-		_PhysicsHandCollision->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-		_PhysicsHandCollision->SetSimulatePhysics(false);
-		_CorrectResponseContainer = _PhysicsHandCollision->GetCollisionResponseToChannels();
-	}*/
 
 	//_PRC->SetReplicatedPhysicsObject(_PhysicsHandCollision);
 
 	//This is gonna be all zero which will cause the hand to flip out if we dont set it
 	_MC_LastLoc = GetActorLocation();
+}
+
+void AVRHand::OnRep_Owner()
+{
+	if (GetOwner() == UGameplayStatics::GetPlayerController(GetWorld(), 0))
+	{
+		GEngine->AddOnScreenDebugMessage(982, 15.f, FColor::Black, "Requested character from server");
+		NF_Server_RequestCharacterOwner();
+	}
 }
 
 // Called every frame
@@ -177,7 +179,7 @@ void AVRHand::Tick(float DeltaTime)
 			_PHC->SetTargetLocationOffset(FinalOffset);
 
 			if (_CharacterAttachedTo)
-			{
+			{				
 				_PHC->SetDesiredVelocity(_CharacterAttachedTo->GetDesiredVelocity());
 			}
 		}
@@ -646,10 +648,38 @@ void AVRHand::GrabSphereOverlapEnd(	UPrimitiveComponent* OverlappedComponent, AA
 	}
 }
 
-void AVRHand::IsRightHand(bool bRightHand, UMotionControllerComponent* ControllerToFollow)
+void AVRHand::NF_Server_RequestCharacterOwner_Implementation()
+{
+	if (!_CharacterAttachedTo)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red, "VRHand _CharacterAttachedTo is NULL!");
+		return;
+	}
+
+	NF_Client_RequestCharacterOwner(_CharacterAttachedTo);
+	ClientSideSetup(_CharacterAttachedTo->GetMotionController(GetIsRightHand()));
+}
+
+void AVRHand::NF_Client_RequestCharacterOwner_Implementation(AActor* CharacterOwner)
+{
+	GEngine->AddOnScreenDebugMessage(982, 15.f, FColor::Black, "Server sent the character owner");
+
+	_CharacterAttachedTo = Cast<AVRCharacter>(CharacterOwner);
+
+	if (_CharacterAttachedTo)
+	{
+		ClientSideSetup(_CharacterAttachedTo->GetMotionController(GetIsRightHand()));
+	}
+	else
+	{
+		GEngine->AddOnScreenDebugMessage(982, 15.f, FColor::Black, "CharacterOwner is null!");
+	}
+}
+
+void AVRHand::IsRightHand(bool bRightHand)
 {
 	_bRightHand = bRightHand;
-	_MotionControllerComp = ControllerToFollow;
+	//_MotionControllerComp = ControllerToFollow;
 	/*if (bRightHand)
 	{
 		if (_RightPhysicsHandSM)
@@ -673,16 +703,6 @@ void AVRHand::IsRightHand(bool bRightHand, UMotionControllerComponent* Controlle
 		if (_RightPhysicsHandSM)
 			_RightPhysicsHandSM->SetVisibility(false);
 	}*/
-
-	if (!_ControllerSKM || !_MotionControllerComp)
-		return;
-
-	_PHC->SetReplicatedPhysicsObject(_ControllerSKM);
-	_PHC->SetMatchTargetAuthorityType(EAuthorityType::EAT_Client);
-	_PHC->SetTargetObject(_MotionControllerComp);
-//	_PHC->SetMatchTarget(true);
-	_PHC->SetTargetType(ETargetType::ETT_SetObject);
-	_PHC->SetPlayerControllerOwner(Cast<APlayerController>(GetOwner()));
 }
 
 FVector AVRHand::GetMotionControllerMoveForwardDir()
@@ -710,7 +730,6 @@ void AVRHand::GripPressed()
 		_GripCheckTimer = 1.0f;
 	}
 
-	
 	/*if (_LeftPhysicsHandSM)
 	{
 		_PhysicsHandSM = _LeftPhysicsHandSM;
@@ -811,12 +830,12 @@ void AVRHand::UpdateOwner(AController* PC)
 	if (!_PHC)
 		return;
 
-	_PHC->SetReplicatedPhysicsObject(_ControllerSKM);
+	/*_PHC->SetPhysicsObject(_ControllerSKM);
 	_PHC->SetMatchTargetAuthorityType(EAuthorityType::EAT_Client);
 	_PHC->SetTargetObject(_MotionControllerComp);
 //	_PHC->SetMatchTarget(true);
 	_PHC->SetTargetType(ETargetType::ETT_SetObject);
-	_PHC->SetPlayerControllerOwner(PC);
+	_PHC->SetPlayerControllerOwner(PC);*/
 }
 
 FTransform AVRHand::GetPhysicsObjectTransform()
@@ -827,13 +846,18 @@ FTransform AVRHand::GetPhysicsObjectTransform()
 	return _ControllerSKM->GetComponentTransform();
 }
 
+void AVRHand::SetCharacterAttachedTo(AVRCharacter* Character)
+{
+	_CharacterAttachedTo = Character;
+	
+}
+
 FVector AVRHand::GetDesiredVelocity()
 {
 	if (_CharacterAttachedTo)
 	{
 		return _CharacterAttachedTo->GetDesiredVelocity();
-	 }
-
+	}
 
 	return FVector::ZeroVector;
 }
@@ -857,6 +881,31 @@ AVRItem* AVRHand::GetHoldingItem()
 	}
 
 	return nullptr;
+}
+
+void AVRHand::ClientSideSetup(UMotionControllerComponent* ControllerToFollow)
+{
+	_MotionControllerComp = ControllerToFollow;
+
+	if (!_ControllerSKM)
+	{
+		GEngine->AddOnScreenDebugMessage(982, 15.f, FColor::Black, "ClientSideSetup: ControllerSKM is NULL!");
+		return;
+	}
+
+	if (!_MotionControllerComp)
+	{
+		GEngine->AddOnScreenDebugMessage(982, 15.f, FColor::Black, "ClientSideSetup: _MotionControllerComp is NULL!");
+		return;
+	}
+
+	GEngine->AddOnScreenDebugMessage(982, 15.f, FColor::Black, "ClientSideSetup");
+	_PHC->SetPhysicsObject(_ControllerSKM);
+	_PHC->SetMatchTargetAuthorityType(EAuthorityType::EAT_Client);
+	_PHC->SetTargetType(ETargetType::ETT_SetObject);
+	_PHC->SetTargetObject(_MotionControllerComp);
+	_PHC->SetPlayerControllerOwner(Cast<APlayerController>(GetOwner()));
+
 }
 
 void AVRHand::Client_ItemPickupInvalid_Implementation()
@@ -911,7 +960,7 @@ void AVRHand::AttemptItemGrab()
 		{
 			_ComponentHeld = GrabComp;
 			_ControllerSKM->SetSimulatePhysics(false);
-			//_ControllerSKM->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			_ControllerSKM->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 			_ControllerSKM->SetVisibility(false);
 
 			/*if(GetLocalRole() < ENetRole::ROLE_Authority)
@@ -943,22 +992,4 @@ UItemGrabComponent* AVRHand::FindClosestGrabComponent()
 	}		
 
 	return GrabComp;
-}
-
-void AVRHand::Server_NewHandTransform_Implementation(FVector PLocation, FRotator PRotation, FVector TLocation, FRotator TRotation)
-{
-	_LastKNownHandLocation = PLocation;
-	_LastKNownHandRotation = PRotation;
-	_LastKNownTrackingHandLocation = TLocation;
-	_LastKNownTrackingHandRotation = TRotation;
-}
-
-void AVRHand::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-	DOREPLIFETIME(AVRHand, _LastKNownHandLocation);
-	DOREPLIFETIME(AVRHand, _LastKNownHandRotation);
-	DOREPLIFETIME(AVRHand, _LastKNownTrackingHandLocation);
-	DOREPLIFETIME(AVRHand, _LastKNownTrackingHandRotation);
 }

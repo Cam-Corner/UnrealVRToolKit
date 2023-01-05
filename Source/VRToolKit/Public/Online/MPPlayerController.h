@@ -6,6 +6,8 @@
 #include "GameFramework/PlayerController.h"
 #include "MPPlayerController.generated.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogAMPPlayerController, Log, All);
+
 /**
  * 
  */
@@ -20,4 +22,6 @@ public:
 	UFUNCTION(BlueprintCallable, Server, Reliable)
 		void Server_SwapVRandNonVRPawn(bool bUseVR);
 
+	UFUNCTION(BlueprintCallable, Client, Reliable)
+		void NF_Client_Disconnect(const FString& Reason);
 };

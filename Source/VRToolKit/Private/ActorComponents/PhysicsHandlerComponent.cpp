@@ -10,6 +10,8 @@
 #include "PBDRigidsSolver.h"
 #include "PhysicsEngine/BodyInstance.h"
 #include "PhysicsProxy/SingleParticlePhysicsProxy.h"
+#include "Online/PhysicsReplicationComponent.h"
+
 
 // Sets default values for this component's properties
 UPhysicsHandlerComponent::UPhysicsHandlerComponent()
@@ -115,6 +117,54 @@ void UPhysicsHandlerComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 	}
 
 	_CheckTimer -= DeltaTime;*/
+
+	_TimeBeforeSending -= DeltaTime;
+	
+
+	//if (GetOwnerRole() < ENetRole::ROLE_AutonomousProxy)
+	{
+		AActor* Owner = Cast<AActor>(GetOwner());
+		if (_TimeBeforeSending <= 0 && _PhysicsObject)
+		{
+			if (GetOwnerRole() >= ENetRole::ROLE_Authority)
+			{
+				GEngine->AddOnScreenDebugMessage(10, 1, FColor::Blue, "Owner = " + GetOwner()->GetFName().ToString());
+
+				if (Owner && Owner->GetOwner())
+					GEngine->AddOnScreenDebugMessage(11, 1, FColor::Blue, "PC Owner = " + Owner->GetOwner()->GetFName().ToString());
+				else
+					GEngine->AddOnScreenDebugMessage(11, 1, FColor::Blue, "PC Owner = No Owner!");
+			}
+
+			if (Owner && Owner->GetOwner() == UGameplayStatics::GetPlayerController(GetWorld(), 0))
+			{
+				FPhysicsNetSnapShot SnapShot;
+				SnapShot._Location = Owner->GetActorLocation();//_PhysicsObject->GetComponentLocation();
+				SnapShot._Rotation = _PhysicsObject->GetComponentQuat();
+				SnapShot._LinearVelocity = _PhysicsObject->GetPhysicsLinearVelocity();
+				SnapShot._AngularVelocity = _PhysicsObject->GetPhysicsAngularVelocityInRadians();
+				NF_Server_SendPhysicsSnapShot(SnapShot);
+				GEngine->AddOnScreenDebugMessage(12, 1, FColor::Blue, "SentPhysicsState");
+			}
+			else
+			{
+				GEngine->AddOnScreenDebugMessage(12, 1, FColor::Blue, "Not Owner So didnt send physics state!");
+			}
+
+			_TimeBeforeSending = 1 / 60;
+		}
+		else if (!_PhysicsObject)
+		{
+			if (GetOwnerRole() >= ENetRole::ROLE_Authority && Owner && Owner->GetOwner() != UGameplayStatics::GetPlayerController(GetWorld(), 0))
+			{
+				GEngine->AddOnScreenDebugMessage(100, 1, FColor::Red, "Server _PhysicsObject is NULL!");
+			}
+			else if(Owner && Owner->GetOwner() == UGameplayStatics::GetPlayerController(GetWorld(), 0))
+			{
+				GEngine->AddOnScreenDebugMessage(101, 1, FColor::Red, GetName() + " Client _PhysicsObject is NULL!");
+			}
+		}
+	}
 }
 
 void UPhysicsHandlerComponent::SetMatchTargetAuthorityType(EAuthorityType MatchTargetAuthorityType)
@@ -125,6 +175,11 @@ void UPhysicsHandlerComponent::SetMatchTargetAuthorityType(EAuthorityType MatchT
 void UPhysicsHandlerComponent::SetTargetType(ETargetType TargetType)
 {
 	_MatchTargetType = TargetType;
+}
+
+void UPhysicsHandlerComponent::SetPhysicsObject(UPrimitiveComponent* PComp)
+{
+	_PhysicsObject = PComp;
 }
 
 void UPhysicsHandlerComponent::SetTargetObject(USceneComponent* Comp)
@@ -459,37 +514,45 @@ void UPhysicsHandlerComponent::GetBoneTrasnformRecursive(FTransform& Transform, 
 	}
 }
 
-void UPhysicsHandlerComponent::APT_AddForce(UPrimitiveComponent* Comp, FVector Force)
+void UPhysicsHandlerComponent::APT_AddForce(UPrimitiveComponent* Comp, FVector Force, bool bHardSetVelocity)
 {
 	if (!Comp)
 		return;
 
-	if (const FBodyInstance* BI = Comp->GetBodyInstance())
+	if (FBodyInstance* BI = Comp->GetBodyInstance())
 	{
 		if (auto Handle = BI->ActorHandle)
 		{
 			if (Chaos::FRigidBodyHandle_Internal* RH = Handle->GetPhysicsThreadAPI())
 			{
 				Comp->WakeAllRigidBodies();
-				RH->AddForce(Force, false);
+
+				if (bHardSetVelocity)
+					BI->SetLinearVelocity(Force, false);
+				else
+					RH->AddForce(Force, false);
 			}
 		}
 	}
 }
 
-void UPhysicsHandlerComponent::APT_AddTorque(UPrimitiveComponent* Comp, FVector Torque)
+void UPhysicsHandlerComponent::APT_AddTorque(UPrimitiveComponent* Comp, FVector Torque, bool bHardSetVelocity)
 {
 	if (!Comp)
 		return;
 
-	if (const FBodyInstance* BI = Comp->GetBodyInstance())
+	if (FBodyInstance* BI = Comp->GetBodyInstance())
 	{
 		if (auto Handle = BI->ActorHandle)
 		{
 			if (Chaos::FRigidBodyHandle_Internal* RH = Handle->GetPhysicsThreadAPI())
 			{
 				Comp->WakeAllRigidBodies();
-				RH->AddTorque(Torque, false);
+
+				if (bHardSetVelocity)
+					BI->SetAngularVelocityInRadians(Torque, false);
+				else
+					RH->AddTorque(Torque, false);
 			}
 		}
 	}
@@ -526,7 +589,8 @@ void UPhysicsHandlerComponent::APT_MatchTarget(float DeltaTime)
 		FVector From = WorldT.GetLocation();
 		FVector To = ToT.GetLocation() + _TargetLocationOffset;		
 		FVector Force = _LocPD.GetForce(DeltaTime, From, To, PO_BI->GetUnrealWorldVelocity(), _DesiredVelocity);
-		APT_AddForce(_PhysicsObject , Force * PO_BI->GetBodyMass());
+		APT_AddForce(_PhysicsObject , Force * PO_BI->GetBodyMass(), _bHardSetLinearVelocity);
+		//GEngine->AddOnScreenDebugMessage(453, 1.f, FColor::Red, "PHC Desired Velocity: " + _DesiredVelocity.ToString());
 	}
 
 	{
@@ -547,14 +611,45 @@ void UPhysicsHandlerComponent::APT_MatchTarget(float DeltaTime)
 			Torque = WorldScaled;
 		}
 
-		APT_AddTorque(_PhysicsObject, Torque);
-
+		APT_AddTorque(_PhysicsObject, Torque, _bHardSetAngularVelocity);
 	}
 }
 
 void UPhysicsHandlerComponent::APT_DefaultPhysics(float DeltaTime)
 {
 
+}
+
+void UPhysicsHandlerComponent::NF_Server_SendPhysicsSnapShot_Implementation(const FPhysicsNetSnapShot& SnapShot)
+{
+	NF_NetMulticast_SendPhysicsSnapShot(SnapShot);
+}
+
+void UPhysicsHandlerComponent::NF_NetMulticast_SendPhysicsSnapShot_Implementation(const FPhysicsNetSnapShot& SnapShot)
+{
+	AActor* Owner = Cast<AActor>(GetOwner());
+	if ((Owner && Owner->GetOwner() != UGameplayStatics::GetPlayerController(GetWorld(), 0)))
+	{		
+		GEngine->AddOnScreenDebugMessage(57, 1, FColor::Black , "Recieved Updated Physics State From Server!");
+
+		FString LocationMessage = "SnapShot Info Location: " + SnapShot._Location.ToString();
+		FString RotationMessage = "SnapShot Info Rotation: " + SnapShot._Rotation.ToString();
+		FString LinearVelocityMessage = "SnapShot Info Linear Velocity: " + SnapShot._LinearVelocity.ToString();
+		FString AngularVelocityMessage = "SnapShot Info Angular Velocity: " + SnapShot._AngularVelocity.ToString();
+
+		GEngine->AddOnScreenDebugMessage(1, 1, FColor::Black, LocationMessage);
+		GEngine->AddOnScreenDebugMessage(2, 1, FColor::Black, RotationMessage);
+		GEngine->AddOnScreenDebugMessage(3, 1, FColor::Black, LinearVelocityMessage);
+		GEngine->AddOnScreenDebugMessage(4, 1, FColor::Black, AngularVelocityMessage);
+
+		if (!_PhysicsObject)
+			return;
+
+		_PhysicsObject->SetWorldLocation(SnapShot._Location, false, NULL, ETeleportType::TeleportPhysics);
+		_PhysicsObject->SetWorldRotation(SnapShot._Rotation, false, NULL, ETeleportType::TeleportPhysics);
+		_PhysicsObject->SetPhysicsLinearVelocity(SnapShot._LinearVelocity);
+		_PhysicsObject->SetPhysicsAngularVelocityInRadians(SnapShot._AngularVelocity);
+	}
 }
 
 void FPhysicsHandlerPrePhysicsTickFunction::ExecuteTick(float DeltaTime, ELevelTick TickType, ENamedThreads::Type CurrentThread, const FGraphEventRef& MyCompletionGraphEvent)

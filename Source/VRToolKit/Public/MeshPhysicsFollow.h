@@ -88,10 +88,16 @@ public:
 
 protected:
 	UPROPERTY(VisibleAnywhere)
-	class UStaticMeshComponent* _FollowMesh;
+	class USceneComponent* _FollowComp;
 	
 	UPROPERTY(VisibleAnywhere)
-	class UStaticMeshComponent* _PhysicsMesh;
+	class USkeletalMeshComponent* _SKM_PhysicsMesh;
+
+	UPROPERTY(VisibleAnywhere)
+	class UStaticMeshComponent* _STM_PhysicsMesh;
+
+	UPROPERTY(EditAnywhere, Category = "PD Controller")
+	bool _bUseSkeletalMeshes = false;
 
 	UPROPERTY(EditAnywhere);
 	class UPhysicsHandlerComponent* _PHC;

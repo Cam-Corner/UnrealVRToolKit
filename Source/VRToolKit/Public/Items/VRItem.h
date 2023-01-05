@@ -12,12 +12,13 @@ class AVRHand;
 class UStaticMeshComponent;
 class UPhysicsHandlerComponent;
 class UItemStorer;
+
 UENUM()
 enum EItemSize
 {
-	EIS_ItemSmall		UMETA("ItemSmall"),
-	EIS_ItemMedium		UMETA("ItemMedium"),
-	EIS_ItemLarge		UMETA("ItemLarge"),
+	EIS_ItemSmall		UMETA(MetaTag1="ItemSmall"),
+	EIS_ItemMedium		UMETA(MetaTag1="ItemMedium"),
+	EIS_ItemLarge		UMETA(MetaTag1="ItemLarge"),
 };
 
 UCLASS()
@@ -44,6 +45,10 @@ public:
 	virtual UClass* GetItemMagazine() { return NULL; }
 
 	UItemGrabComponent* GetGrabPoint() { return _MainGrabComponent; }
+
+	UFUNCTION(BlueprintCallable)
+	void BP_SetRootComponent(USceneComponent* NewRootComp);
+
 protected:
 	UFUNCTION()
 	virtual void MainGrabPointGrabbed(AVRHand* Hand);

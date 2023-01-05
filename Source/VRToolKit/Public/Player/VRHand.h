@@ -61,11 +61,12 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	virtual void OnRep_Owner() override;
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	void IsRightHand(bool bRightHand, UMotionControllerComponent* ControllerToFollow);
+	void IsRightHand(bool bRightHand);
 
 	bool GetIsRightHand() { return _bRightHand; }
 
@@ -96,7 +97,7 @@ public:
 
 	bool HandInClimbMode() { if (_GrabbedEGC) return true; return false; }
 
-	void SetCharacterAttachedTo(AVRCharacter* Character) { _CharacterAttachedTo = Character; }
+	void SetCharacterAttachedTo(AVRCharacter* Character);
 
 	FVector GetDesiredVelocity();
 
@@ -105,6 +106,8 @@ public:
 	void NonVRFollow(class USceneComponent* CompToFollow);
 
 	AVRItem* GetHoldingItem();
+
+	void ClientSideSetup(UMotionControllerComponent* ControllerToFollow);
 protected:
 	UPROPERTY(EditAnywhere, Category = "VRHand: Dynamic Edge Grab Detection")
 	FVector3f _ParmEdgeDetectBoxExtent = FVector3f(0.5f, 5, 4.f);
@@ -164,23 +167,7 @@ private:
 	UPROPERTY(EditAnywhere, Category = "PhysicsTuning")
 	FVector _HandOffset = FVector::ZeroVector;
 
-	UPROPERTY(Replicated)
-	FVector _LastKNownHandLocation = FVector::ZeroVector;
-
-	UPROPERTY(Replicated)
-	FRotator _LastKNownHandRotation = FRotator::ZeroRotator;
-
-	UPROPERTY(Replicated)
-	FVector _LastKNownTrackingHandLocation = FVector::ZeroVector;
-
-	UPROPERTY(Replicated)
-	FRotator _LastKNownTrackingHandRotation = FRotator::ZeroRotator;
-
-
 	float _ReplicatedHandTransformTimer = 0.25f;
-
-	UFUNCTION(Server, UnReliable)
-	void Server_NewHandTransform(FVector PLocation, FRotator PRotation, FVector TLocation, FRotator TRotation);
 
 	UFUNCTION(Server, Reliable)
 	void Server_GrabbedComponent(UItemGrabComponent* GrabComp);
@@ -253,4 +240,13 @@ private:
 	float _GripCheckTimer = 0.0f;
 
 	FTransform _ClimbingGrabTransform;
+
+protected:
+	UFUNCTION(Server, Reliable)
+		void NF_Server_RequestCharacterOwner();
+
+	UFUNCTION(client, Reliable)
+		void NF_Client_RequestCharacterOwner(AActor* CharacterOwner);
+
+
 };

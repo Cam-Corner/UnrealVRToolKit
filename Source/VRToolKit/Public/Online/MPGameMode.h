@@ -22,7 +22,7 @@ class VRTOOLKIT_API AMPGameMode : public AGameMode
 public:
 	AMPGameMode();
 
-	virtual void PostLogin(APlayerController* NewPlayer) override;
+	virtual void OnPostLogin(AController* NewPlayer) override;
 
 	virtual void BeginPlay() override;
 
@@ -30,15 +30,22 @@ public:
 
 	virtual void HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer) override;
 
-	void HandlePlayerJoined(APlayerController* NewPlayer);
+	virtual void Logout(AController* Exiting) override;
+
+	void HandlePlayerJoined(AController* NewPlayer);
 
 	UFUNCTION(BlueprintCallable)
 	void SwitchVRandNonVR(APlayerController* Player, bool bUseVR);
 
-private:
+protected:
 	TArray<AMPPlayerController*> _PlayerControllers;
 
 	TSubclassOf<APawn> _NonVRPawn = nullptr;
 
 	TSubclassOf<APawn> _VRPawn = nullptr;
+
+	UPROPERTY(EditAnywhere)
+	uint8 _MaxPlayerCount = 3;
+
+	uint8 _CurrentPlayerCount = 0;
 };

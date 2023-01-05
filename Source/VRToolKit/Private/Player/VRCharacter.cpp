@@ -125,16 +125,11 @@ void AVRCharacter::BeginPlay()
 	if (IsLocallyControlled() && _HMDMesh)
 	{
 		_HMDMesh->SetVisibility(false);
-		Server_AskForHands();
+		//Server_AskForHands();
 	}
 	else if (_HMDMesh)
 	{
 		_HMDMesh->SetVisibility(true);
-	}
-
-	if (GetLocalRole() >= ENetRole::ROLE_Authority)
-	{
-		SpawnHands();	
 	}
 
 	if (_VRBody)
@@ -143,10 +138,10 @@ void AVRCharacter::BeginPlay()
 	}
 }
 
-void AVRCharacter::Server_AskForHands_Implementation()
+/*void AVRCharacter::Server_AskForHands_Implementation()
 {
 	NetMulticast_SetHands(_LeftHand, _RightHand);
-}
+}*/
 
 // Called every frame
 void AVRCharacter::Tick(float DeltaTime)
@@ -158,6 +153,31 @@ void AVRCharacter::Tick(float DeltaTime)
 	{
 		_LeftHand->SetOwner(GetOwner());
 		_RightHand->SetOwner(GetOwner());
+
+		/*if (GetLocalRole() >= ENetRole::ROLE_Authority )
+		{
+			if (_LeftHand->GetOwner())
+			{
+				GEngine->AddOnScreenDebugMessage(25 + 2 * _MessageIndex, 1.f, FColor::Cyan, _LeftHand->GetName() +
+					" Owner is " + _LeftHand->GetOwner()->GetName());
+			}
+			else
+			{
+				GEngine->AddOnScreenDebugMessage(25 + 2 * _MessageIndex, 1.f, FColor::Cyan, _LeftHand->GetName() +
+					" Owner is NULL!");
+			}
+
+			if (_RightHand->GetOwner())
+			{
+				GEngine->AddOnScreenDebugMessage(26 + 3 * _MessageIndex, 1.f, FColor::Cyan, _RightHand->GetName() +
+					" Owner is " + _RightHand->GetOwner()->GetName());
+			}
+			else
+			{
+				GEngine->AddOnScreenDebugMessage(26 + 3 * _MessageIndex, 1.f, FColor::Cyan, _RightHand->GetName() +
+					" Owner is NULL!");
+			}
+		}*/
 	}
 
 	if (IsLocallyControlled())
@@ -273,16 +293,22 @@ void AVRCharacter::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
 
-	if (!_LeftHand || !_RightHand)
-		return;
+	if (GetLocalRole() >= ENetRole::ROLE_Authority && (!_LeftHand || !_RightHand))
+	{
+		_MessageIndex++;
+		SpawnHands();
+	
+		if (!_LeftHand || !_RightHand)
+			return;
 
-	//_LeftHand->SetOwner(NewController);
-	//_RightHand->SetOwner(NewController);
-	_LeftHand->UpdateOwner(NewController);
-	_RightHand->UpdateOwner(NewController);
+		//_LeftHand->SetOwner(NewController);
+		//_RightHand->SetOwner(NewController);
+		_LeftHand->SetOwner(NewController);
+		_RightHand->SetOwner(NewController);
 
-	NetMulticast_SetHands(_LeftHand, _RightHand);
-	NetMulticast_SetNewOwner(NewController);
+		//NetMulticast_SetHands(_LeftHand, _RightHand);
+		//NetMulticast_SetNewOwner(NewController);
+	}
 }
 
 void AVRCharacter::MoveForward(float Value)
@@ -368,6 +394,20 @@ void AVRCharacter::RightGripPressed(float Value)
 
 void AVRCharacter::LeftTriggerPressed(float Value)
 {
+	if (_CharacterCam && Value > FMath::Abs(.5f))
+	{
+		FTransform FireTransform = _CharacterCam->GetComponentTransform();
+		if (!HasAuthority())
+		{		
+			NF_Server_WeaponFired(FireTransform);
+			WeaponFired(FireTransform);
+		}
+		else
+		{
+			WeaponFired(FireTransform);
+		}
+	}
+
 	if (!_LeftHand)
 		return;
 
@@ -457,8 +497,9 @@ void AVRCharacter::SpawnHands()
 	{
 		_LeftHand = GetWorld()->SpawnActor<AVRHand>(_BP_DefaultLeftHand, GetActorLocation(), GetActorRotation(), SpawnInfo);
 		//_LeftHand->AttachToComponent(GetRootComponent(), HandRule);
-		_LeftHand->IsRightHand(false, _LeftHandMCComp);
+		_LeftHand->IsRightHand(false);
 		_LeftHand->SetCharacterAttachedTo(this);
+		_LeftHand->SetOwner(GetOwner());
 
 		if (!UsingHMD)
 			_LeftHand->NonVRFollow(_LeftHandRoot);
@@ -468,8 +509,9 @@ void AVRCharacter::SpawnHands()
 	{
 		_RightHand = GetWorld()->SpawnActor<AVRHand>(_BP_DefaultRightHand, GetActorLocation(), GetActorRotation(), SpawnInfo);
 		//_RightHand->AttachToComponent(GetRootComponent(), HandRule);
-		_RightHand->IsRightHand(true, _RightHandMCComp);
+		_RightHand->IsRightHand(true);
 		_RightHand->SetCharacterAttachedTo(this);
+		_RightHand->SetOwner(GetOwner());
 
 		if (!UsingHMD)
 			_RightHand->NonVRFollow(_RightHandRoot);
@@ -578,7 +620,15 @@ FVector AVRCharacter::GetCharacterCollisionLocation()
 	return FVector::ZeroVector;
 }
 
-void AVRCharacter::NetMulticast_SetNewOwner_Implementation(AController* NewController)
+UMotionControllerComponent* AVRCharacter::GetMotionController(bool bGetRightMC)
+{
+	if (bGetRightMC)
+		return _RightHandMCComp;
+
+	return _LeftHandMCComp;
+}
+
+/*void AVRCharacter::NetMulticast_SetNewOwner_Implementation(AController* NewController)
 {
 	if (!_LeftHand || !_RightHand)
 		return;
@@ -588,9 +638,9 @@ void AVRCharacter::NetMulticast_SetNewOwner_Implementation(AController* NewContr
 
 	_LeftHand->UpdateOwner(NewController);
 	_RightHand->UpdateOwner(NewController);
-}
+}*/
 
-void AVRCharacter::NetMulticast_SetHands_Implementation(AVRHand* LeftHand, AVRHand* RightHand)
+/*void AVRCharacter::NetMulticast_SetHands_Implementation(AVRHand* LeftHand, AVRHand* RightHand)
 {
 	if (!LeftHand || !RightHand)
 		return;
@@ -606,7 +656,7 @@ void AVRCharacter::NetMulticast_SetHands_Implementation(AVRHand* LeftHand, AVRHa
 		_RightHand->SetActorLocation(GetActorLocation(), false, nullptr, ETeleportType::ResetPhysics);
 		_RightHand->IsRightHand(true, _RightHandMCComp);
 	}
-}
+}*/
 
 void AVRCharacter::Server_NewHMDTransform_Implementation(FVector Location, FRotator Rotation)
 {
@@ -620,5 +670,75 @@ void AVRCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 
 	DOREPLIFETIME(AVRCharacter, _LastKNownHMDLocation);
 	DOREPLIFETIME(AVRCharacter, _LastKNownHMDRotation);
+}
+
+void AVRCharacter::NF_Server_WeaponFired_Implementation(FTransform FiredTransform)
+{
+	WeaponFired(FiredTransform);
+}
+
+void AVRCharacter::WeaponFired(const FTransform& InFiredTransform)
+{
+	//Get the needed variables from the in transform
+	FTransform FiredTransform = InFiredTransform;
+	FVector FiredLocation = FiredTransform.GetLocation();
+
+	FQuat FiredRotation = FiredTransform.GetRotation();
+	FVector FiredDirection = FiredRotation.GetForwardVector();
+
+	//Fire the shot
+	FHitResult FiredHitObject;
+	FireShot(FiredHitObject, FiredLocation, FiredDirection, 100000);
+
+	AActor* ActorHit = FiredHitObject.GetActor();
+
+	if (APawn* HitPawn = Cast<APawn>(ActorHit))
+	{
+		//for (AMPPlayerController* AMP : _PlayerControllers)
+		{
+			//if (HitPawn == AMP->GetPawn())
+			{
+				//Pawn Got Hit
+				GEngine->AddOnScreenDebugMessage(-1, 15, FColor::Red, "VRCharacter Fired Shot: Hit Pawn!");
+			}
+		}
+	}
+}
+
+void AVRCharacter::FireShot(FHitResult& Hit, const FVector& Location, const FVector& Direction, const float Distance)
+{
+	FVector ShotStartLoc = Location;
+	FVector ShotEndLoc = Location + (Direction * Distance);
+	FColor DebugShotColour = FColor::Blue;
+	FCollisionQueryParams CQParams;
+	CQParams.AddIgnoredActor(this);
+
+	GetWorld()->LineTraceSingleByChannel(Hit, ShotStartLoc, ShotEndLoc, ECollisionChannel::ECC_Pawn, CQParams);
+
+	if (Hit.bBlockingHit)
+	{
+		if (Hit.GetActor() && Cast<APawn>(Hit.GetActor()))
+		{
+			DebugShotColour == FColor::Red;		
+		}
+		else
+		{
+			DebugShotColour == FColor::Green;
+		}
+		
+		ShotEndLoc = Hit.Location;
+
+		FColor DebugBoxColour = FColor::Red;
+
+		if (!HasAuthority())
+		{
+			DebugShotColour = FColor::Purple;
+			DebugBoxColour = FColor::Blue;
+		}
+		
+		DrawDebugBox(GetWorld(), Hit.Location, FVector(8, 8, 8), DebugBoxColour, false, 15.f);
+	}
+	
+	DrawDebugLine(GetWorld(), ShotStartLoc, ShotEndLoc, DebugShotColour, false, 15.f);
 }
 

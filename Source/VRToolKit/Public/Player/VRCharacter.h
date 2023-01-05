@@ -59,6 +59,7 @@ public:
 
 	FVector GetCharacterCollisionLocation();
 
+	UMotionControllerComponent* GetMotionController(bool bGetRightMC);
 protected:
 	UPROPERTY(EditAnywhere)
 	UVRPawnComponent* _VRPawnComp;
@@ -146,21 +147,19 @@ protected:
 	UFUNCTION(BlueprintCallable)
 		FTransform GetVRCameraTransorm();
 
-
-
 //RPC Functions
 protected:
 	UFUNCTION(Server, UnReliable)
 		void Server_NewHMDTransform(FVector Location, FRotator Rotation);
 	
-	UFUNCTION(NetMulticast, Reliable)
+	/*UFUNCTION(NetMulticast, Reliable)
 		void NetMulticast_SetHands(AVRHand* LeftHand, AVRHand* RightHand);
 
 	UFUNCTION(Server, Reliable)
 		void Server_AskForHands();
 
 	UFUNCTION(NetMulticast, Reliable)
-		void NetMulticast_SetNewOwner(AController* NewController);
+		void NetMulticast_SetNewOwner(AController* NewController);*/
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 		UCapsuleComponent* _CharacterCap;
@@ -213,5 +212,18 @@ private:
 
 	UVRCharacterAB* _CharacterAB;
 
-	
+	int32 _MessageIndex = 0;
+
+//Non VR Testing Functions
+protected:
+	UFUNCTION(Server, UnReliable, BlueprintCallable)
+	void NF_Server_WeaponFired(FTransform FiredTransform);
+
+private:
+	UFUNCTION(BlueprintCallable)
+	virtual	void WeaponFired(const FTransform& InFiredTransform);
+
+	virtual void FireShot(FHitResult& Hit, const FVector& Location, const FVector& Direction, const float Distance);
+
+
 };

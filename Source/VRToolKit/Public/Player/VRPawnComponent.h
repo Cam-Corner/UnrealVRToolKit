@@ -39,21 +39,21 @@ public:
 UENUM(BlueprintType)
 enum EMovementModes
 {
-	EMM_Grounded		UMETA("Grounded"),
-	EMM_Falling			UMETA("Falling&Jumping"),
-	EMM_Climbing		UMETA("Climbing"),
-	EMM_Swimming		UMETA("Swimming"),
-	EMM_Flying			UMETA("Flying"),
-	EMM_RampSliding		UMETA("RampSliding"),
-	EMM_Custom			UMETA("Custom"),
+	EMM_Grounded		UMETA(MetaTag1="Grounded"),
+	EMM_Falling			UMETA(MetaTag1 = "Falling&Jumping"),
+	EMM_Climbing		UMETA(MetaTag1="Climbing"),
+	EMM_Swimming		UMETA(MetaTag1="Swimming"),
+	EMM_Flying			UMETA(MetaTag1="Flying"),
+	EMM_RampSliding		UMETA(MetaTag1="RampSliding"),
+	EMM_Custom			UMETA(MetaTag1="Custom"),
 };
 
 UENUM(BlueprintType)
 enum EClimbingMode
 {
-	ECM_None				UMETA("None"),
-	ECM_GrabbedClimbing		UMETA("GrabbedClimbing"),
-	ECM_Vaulting			UMETA("Vaulting"),
+	ECM_None				UMETA(MetaTag1="None"),
+	ECM_GrabbedClimbing		UMETA(MetaTag1="GrabbedClimbing"),
+	ECM_Vaulting			UMETA(MetaTag1="Vaulting"),
 };
 
 USTRUCT()

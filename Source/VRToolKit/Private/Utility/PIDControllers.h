@@ -121,6 +121,7 @@ public:
 	* CQuat = Current Quaternion Value
 	* DQuat = Desired Quaternion Value
 	*/
+	//UFUNCTION(BlueprintCallable)
 	FVector GetTorque(float DeltaTime, FQuat CQuat, FQuat DQuat, FVector AVel, FVector InertiaTensor, FTransform ActorTransform)
 	{
 		float PGain = _PGain;// (6.f * _Frequency)* (6.f * _Frequency) * 0.25f;
@@ -183,26 +184,27 @@ struct FVelocityPDController
 public:
 	FVelocityPDController() {}
 
+	
 	FVector GetForce(float DeltaTime, FVector CurrentValue, FVector DesiredValue, FVector CurrentVelocity, FVector DesiredVelocity)
 	{
-		float PGain = (6.f * _Frequency) * (6.f * _Frequency) * 0.25f;
-		float DGain = 4.5f * _Frequency * _Dampening;
+		float PGain = _PGain;// (6.f * _Frequency)* (6.f * _Frequency) * 0.25f;
+		float DGain = _DGain;//4.5f * _Frequency * _Dampening;
 
-		//float G = 1 / (1 + DGain * DeltaTime + PGain * DeltaTime * DeltaTime);
-		/*float KSG = PGain * G;
-		float KDG = (DGain + PGain * DeltaTime) * G;*/
-		FVector F = (DesiredValue - CurrentValue) * PGain + (DesiredVelocity - CurrentVelocity) * DGain;
-		//FVector F = (DesiredValue - CurrentValue) * KSG + (DesiredVelocity - CurrentVelocity) * KDG;
+		float G = 1 / (1 + DGain * DeltaTime + PGain * DeltaTime * DeltaTime);
+		float KSG = PGain * G;
+		float KDG = (DGain + PGain * DeltaTime) * G;
+		//FVector F = (DesiredValue - CurrentValue) * PGain + (DesiredVelocity - CurrentVelocity) * DGain;
+		FVector F = (DesiredValue - CurrentValue) * KSG + (DesiredVelocity - CurrentVelocity) * KDG;
 		return F;
 	}
 
 	/**How fast it takes to reach the target */
 	UPROPERTY(EditAnywhere, Category = "Tuning ")
-		float _Frequency = 6.f;
+		float _PGain = 450.0f;
 
 	/** Changes how much it slows down towards the desired value */
 	UPROPERTY(EditAnywhere, Category = "Tuning ")
-		float _Dampening = 1.0f;
+		float _DGain = 22.5f;
 
 
 };
@@ -215,6 +217,7 @@ public:
 	FPIDVectorController() {}
 
 	//Calculate the new add force from the PID Controller. Only need to use the velocity parameters if bUseVelocityForDTerm is true
+	//UFUNCTION(BlueprintCallable)
 	FVector GetForce(float DeltaTime, FVector CurrentValue, FVector DesiredValue, FVector CurrentVelocity = FVector::ZeroVector, FVector DesiredVelocity = FVector::ZeroVector)
 	{
 		//Calculate P Term
@@ -231,9 +234,9 @@ public:
 		{
 			if (_bUseVelocityForDTerm)
 			{
-				FVector VelocityRateOfChange = (CurrentVelocity - _LastVelocity) * DeltaTime;
+				FVector VelocityRateOfChange = (CurrentValue - _LastVelocity) / DeltaTime;
 				D = _DGain * (DesiredVelocity - CurrentVelocity);//-VelocityRateOfChange;
-				_LastVelocity = CurrentVelocity;
+				_LastVelocity = CurrentValue;
 			}
 			else
 			{
@@ -244,10 +247,10 @@ public:
 		}	
 		_bInitialzied = true;
 
-		//return value
-		return (P + I + D) * _Power;
+		return (P + I + D);
 	}
 
+	//UFUNCTION(BlueprintCallable)
 	void Reset()
 	{
 		_bInitialzied = false;
@@ -256,24 +259,21 @@ public:
 public:
 	/**How fast it takes to reach the target */
 	UPROPERTY(EditAnywhere, Category = "Tuning ")
-		float _PGain = 1.0f;
+		float _PGain = 450.0f;
 
 	/**How fast it takes to reach the target */
 	UPROPERTY(EditAnywhere, Category = "Tuning ")
-		float _IGain = 1.0f;
+		float _IGain = 0.0f;
 
 	/** Changes how much it slows down towards the desired value */
 	UPROPERTY(EditAnywhere, Category = "Tuning ")
-		float _DGain = 1.0f;
+		float _DGain = 22.0f;
 
 	UPROPERTY(EditAnywhere, Category = "Tuning ")
 		float _MaxIStored = 0;
 
 	UPROPERTY(EditAnywhere, Category = "Tuning ")
-		float _Power = 1;
-
-	UPROPERTY(EditAnywhere, Category = "Tuning ")
-		bool _bUseVelocityForDTerm = false;
+		bool _bUseVelocityForDTerm = true;
 
 private:
 	FVector _LastVelocity = FVector::ZeroVector;

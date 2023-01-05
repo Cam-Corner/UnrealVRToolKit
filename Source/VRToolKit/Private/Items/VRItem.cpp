@@ -74,6 +74,15 @@ bool AVRItem::IsBeingHeld()
 	return false;
 }
 
+void AVRItem::BP_SetRootComponent(USceneComponent* NewRootComp)
+{
+	if (!NewRootComp)
+		return;
+
+	SetRootComponent(NewRootComp);
+	//_MainGrabComponent->SetupAttachment(NewRootComp);
+}
+
 void AVRItem::MainGrabPointGrabbed(AVRHand* Hand)
 {
 	if (!Hand )
@@ -159,7 +168,7 @@ void AVRItem::SetupItemRootComponent()
 	UPrimitiveComponent* RootComp = Cast<UPrimitiveComponent>(GetRootComponent());
 	if (RootComp)
 	{
-		_PHC->SetReplicatedPhysicsObject(RootComp);
+		_PHC->SetPhysicsObject(RootComp);
 		_PHC->SetMatchTargetAuthorityType(EAuthorityType::EAT_Client);
 		_PHC->SetTargetType(ETargetType::ETT_NoTarget);
 		_RootPrimitiveComponent = RootComp;

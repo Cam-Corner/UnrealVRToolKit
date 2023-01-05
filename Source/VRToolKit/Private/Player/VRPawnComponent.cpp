@@ -126,6 +126,8 @@ void UVRPawnComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 		_VelocityPerFrame = (ThisLocation - _LastLocation) / DeltaTime;
 
 		_LastLocation = ThisLocation;
+
+		GEngine->AddOnScreenDebugMessage(324, .5f, FColor::Green, "Velocity Per Frame: " + _VelocityPerFrame.ToString());
 	}
 }
 
@@ -1734,7 +1736,7 @@ FVector UVRPawnComponent::SmoothJumpToLocation(float DeltaTime, FSmoothJumpParam
 	CurrentLoc += JumpParams._JumpDirection * FinalSpeed;
 	return CurrentLoc;*/
 
-
+	return FVector::ZeroVector;
 }
 
 void UVRPawnComponent::NetMulticast_SendMove_Implementation(FVector NewLocation)

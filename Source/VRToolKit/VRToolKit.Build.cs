@@ -34,7 +34,7 @@ public class VRToolKit : ModuleRules
 				"GameplayTasks",
 				"PhysicsCore",
 				"Chaos",
-				"APEX"
+				//"APEX"
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);

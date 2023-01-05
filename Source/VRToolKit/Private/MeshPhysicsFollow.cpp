@@ -5,6 +5,8 @@
 #include "Components/StaticMeshComponent.h"
 #include "ActorComponents/PhysicsHandlerComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Components/SceneComponent.h"
 
 // Sets default values
 AMeshPhysicsFollow::AMeshPhysicsFollow()
@@ -12,14 +14,18 @@ AMeshPhysicsFollow::AMeshPhysicsFollow()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	_FollowMesh = CreateDefaultSubobject<UStaticMeshComponent>("FollowMesh");
-	_FollowMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	RootComponent = _FollowMesh;
+	_FollowComp = CreateDefaultSubobject<USceneComponent>("FollowComp");
+	RootComponent = _FollowComp;
 
-	_PhysicsMesh = CreateDefaultSubobject<UStaticMeshComponent>("PhysicsMesh");
-	_PhysicsMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	_PhysicsMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
-	_PhysicsMesh->SetupAttachment(_FollowMesh);
+	_STM_PhysicsMesh = CreateDefaultSubobject<UStaticMeshComponent>("STM_PhysicsMesh");
+	_STM_PhysicsMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	_STM_PhysicsMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
+	_STM_PhysicsMesh->SetupAttachment(_FollowComp);
+
+	_SKM_PhysicsMesh = CreateDefaultSubobject<USkeletalMeshComponent>("SKM_PhysicsMesh");
+	_SKM_PhysicsMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	_SKM_PhysicsMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
+	_SKM_PhysicsMesh->SetupAttachment(_FollowComp);
 
 	_OnCalculateCustomPhysics.BindUObject(this, &AMeshPhysicsFollow::CustomPhysics);
 
@@ -31,12 +37,16 @@ void AMeshPhysicsFollow::BeginPlay()
 {
 	Super::BeginPlay();
 
-	_PHC->SetReplicatedPhysicsObject(_PhysicsMesh);
+	_PHC->SetTargetObject(_FollowComp);
 	_PHC->SetMatchTargetAuthorityType(EAuthorityType::EAT_Client);
-	_PHC->SetTargetObject(_FollowMesh);
 //	_PHC->SetMatchTarget(true);
 	_PHC->SetTargetType(ETargetType::ETT_SetObject);
 	_PHC->SetPlayerControllerOwner(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+
+	if(_bUseSkeletalMeshes)
+		_PHC->SetPhysicsObject(_SKM_PhysicsMesh);
+	else
+		_PHC->SetPhysicsObject(_STM_PhysicsMesh);
 
 }
 

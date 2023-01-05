@@ -19,17 +19,17 @@ class AController;
 UENUM(BlueprintType)
 enum EAuthorityType
 {
-	EAT_Server	UMETA("Server Authority"),
-	EAT_Client	UMETA("Client Authority"),
-	EAT_None	UMETA("No Authority")
+	EAT_Server	UMETA(MetaTag1="Server Authority"),
+	EAT_Client	UMETA(MetaTag1="Client Authority"),
+	EAT_None	UMETA(MetaTag1="No Authority")
 };
 
 UENUM(BlueprintType)
 enum ETargetType
 {
-	ETT_NoTarget					UMETA("NoTarget"),
-	ETT_SetLocationAndRotation		UMETA("SetVector"),
-	ETT_SetObject					UMETA("SetObject"),
+	ETT_NoTarget					UMETA(MetaTag1="NoTarget"),
+	ETT_SetLocationAndRotation		UMETA(MetaTag1="SetVector"),
+	ETT_SetObject					UMETA(MetaTag1="SetObject"),
 };
 
 /*
@@ -67,6 +67,29 @@ struct TStructOpsTypeTraits<FPhysicsHandlerPrePhysicsTickFunction> : public TStr
 	};
 };
 
+USTRUCT(BlueprintType)
+struct FPhysicsNetSnapShot
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+		FVector _Location = FVector::ZeroVector;
+
+	UPROPERTY()
+		FQuat _Rotation = FQuat(1);
+
+	UPROPERTY()
+		FVector _LinearVelocity = FVector::ZeroVector;
+
+	UPROPERTY()
+		FVector _AngularVelocity = FVector::ZeroVector;
+
+	/*bool NetSerialize(FArchive& AR, class UPackageMap* Map, bool& bOutSuccess)
+	{
+
+	}*/
+};
+
 USTRUCT()
 struct FPhysicsHandlerPostPhysicsTickFunction : public FTickFunction
 {
@@ -100,7 +123,7 @@ struct TStructOpsTypeTraits<FPhysicsHandlerPostPhysicsTickFunction> : public TSt
 };
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class VRTOOLKIT_API UPhysicsHandlerComponent : /*public UActorComponent,*/ public UPhysicsReplicationComponent
+class VRTOOLKIT_API UPhysicsHandlerComponent : public UActorComponent /*public UPhysicsReplicationComponent*/
 {
 	GENERATED_BODY()
 
@@ -139,6 +162,10 @@ public:
 	/* Sets the target type we want to try and match, or set it to none to have the default physics */
 	UFUNCTION(BlueprintCallable)
 	void SetTargetType(ETargetType TargetType);
+
+	/* if match target is true then this is the object we will be trying to match */
+	UFUNCTION(BlueprintCallable)
+	void SetPhysicsObject(UPrimitiveComponent* PComp);
 
 	/* if match target is true then this is the object we will be trying to match */
 	UFUNCTION(BlueprintCallable)
@@ -191,7 +218,13 @@ protected:
 		TEnumAsByte<ETargetType> _MatchTargetType = ETargetType::ETT_NoTarget;
 
 	UPROPERTY(EditAnywhere, Category = "PhysicsTuning")
+		bool _bHardSetLinearVelocity = false;
+
+	UPROPERTY(EditAnywhere, Category = "PhysicsTuning")
 		FPIDVectorController _LocPD;
+
+	UPROPERTY(EditAnywhere, Category = "PhysicsTuning")
+		bool _bHardSetAngularVelocity = false;
 
 	UPROPERTY(EditAnywhere, Category = "PhysicsTuning")
 		FQuatPDController _RotPD;
@@ -227,8 +260,11 @@ private:
 	void CustomPhysics(float DeltaTime, FBodyInstance* BodyInstance);*/
 	
 	UPROPERTY()
-	USceneComponent* _TargetObject;
+	USceneComponent* _TargetObject = NULL;
 	
+	UPROPERTY()
+	UPrimitiveComponent* _PhysicsObject = NULL;
+
 	UPROPERTY()
 	AController* _PCOwner;
 
@@ -262,8 +298,19 @@ private:
 	FVector _DesiredVelocity = FVector::ZeroVector;
 
 	//async apply physics
-	void APT_AddForce(UPrimitiveComponent* Comp, FVector Force);
-	void APT_AddTorque(UPrimitiveComponent* Comp, FVector Torque);
+	void APT_AddForce(UPrimitiveComponent* Comp, FVector Force, bool bHardSetVelocity);
+	void APT_AddTorque(UPrimitiveComponent* Comp, FVector Torque, bool bHardSetVelocity);
 	void APT_MatchTarget(float DeltaTime);
 	void APT_DefaultPhysics(float DeltaTime);
+
+
+/*Networking Functions */
+public:
+	UFUNCTION(NetMulticast, Reliable)
+	void NF_NetMulticast_SendPhysicsSnapShot(const FPhysicsNetSnapShot& SnapShot);
+
+	UFUNCTION(Server, Reliable)
+	void NF_Server_SendPhysicsSnapShot(const FPhysicsNetSnapShot& SnapShot);
+
+	float _TimeBeforeSending = 0;
 };
